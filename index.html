@@ -2406,17 +2406,17 @@ function Rubros({
     const esRubro = r.cod.endsWith('.00');
     return /*#__PURE__*/React.createElement("tr", {
       key: i,
-      className: esRubro ? 'bg-stone-100 font-semibold' : 'hover:bg-stone-50'
+      className: esRubro ? 'bg-stone-700 text-white' : 'hover:bg-stone-50'
     }, /*#__PURE__*/React.createElement("td", {
-      className: td + ' font-mono text-xs text-stone-600'
+      className: td + (esRubro ? ' font-mono text-xs font-semibold' : ' font-mono text-xs text-stone-600 pl-4')
     }, r.cod), /*#__PURE__*/React.createElement("td", {
-      className: td + ' text-xs text-stone-500'
-    }, r.rubro), /*#__PURE__*/React.createElement("td", {
-      className: td + ' text-xs text-stone-500'
-    }, r.subrubro), /*#__PURE__*/React.createElement("td", {
+      className: td + (esRubro ? ' font-semibold uppercase tracking-wide text-xs' : ' text-xs text-stone-500')
+    }, esRubro ? r.desc : r.rubro), /*#__PURE__*/React.createElement("td", {
+      className: td + ' text-xs ' + (esRubro ? '' : 'text-stone-500')
+    }, esRubro ? '' : r.subrubro), /*#__PURE__*/React.createElement("td", {
       className: td
-    }, r.desc), /*#__PURE__*/React.createElement("td", {
-      className: td + ' text-stone-500'
+    }, esRubro ? '' : r.desc), /*#__PURE__*/React.createElement("td", {
+      className: td + (esRubro ? '' : ' text-stone-500')
     }, r.unidad));
   })))));
 }
@@ -2977,6 +2977,33 @@ function ObraView({
     };
   });
   const costoDirecto = filas.reduce((s, f) => s + f.total, 0);
+  // ============ AGRUPACIÓN POR RUBRO PRINCIPAL ============
+  // Cada item se asigna a su rubro principal (primer dígito del código).
+  // Se calcula el total del rubro y su incidencia sobre el total de obra.
+  // Cada item lleva su % de incidencia respecto al rubro al que pertenece.
+  // _idx preserva el índice original en `items` para que updItem/delItem funcionen.
+  const filasPorRubro = (() => {
+    const map = {};
+    filas.forEach((f, i) => {
+      const rp = String(f.cod || '').split('.')[0];
+      if (!map[rp]) map[rp] = { rp, items: [], total: 0 };
+      map[rp].items.push({ ...f, _idx: i });
+      map[rp].total += f.total;
+    });
+    return Object.values(map)
+      .sort((a, b) => cmpCodigo(a.rp, b.rp))
+      .map(g => {
+        // Buscar nombre del rubro principal en el catálogo
+        const r = motor.rubMap[g.rp + '.00'] || motor.rubMap[g.rp];
+        const nombre = r && r.desc ? r.desc : ('Rubro ' + g.rp);
+        g.items.sort((a, b) => cmpCodigo(a.cod, b.cod));
+        return {
+          ...g,
+          nombre,
+          pctTotal: costoDirecto > 0 ? (g.total / costoDirecto) * 100 : 0
+        };
+      });
+  })();
   const coef = calcCoef(obra.coef || coefDefault());
   const setItems = its => setObra({
     ...obra,
@@ -3164,7 +3191,7 @@ function ObraView({
     className: th + ' w-24'
   }, "\xCDtem"), /*#__PURE__*/React.createElement("th", {
     className: th
-  }, "Detalle"), /*#__PURE__*/React.createElement("th", {
+  }, "Tareas"), /*#__PURE__*/React.createElement("th", {
     className: th + ' w-16'
   }, "Unidad"), /*#__PURE__*/React.createElement("th", {
     className: th + ' w-24'
@@ -3173,64 +3200,82 @@ function ObraView({
   }, "Costo unit."), /*#__PURE__*/React.createElement("th", {
     className: th + ' w-32'
   }, "Costo total"), /*#__PURE__*/React.createElement("th", {
-    className: th + ' w-10'
-  }))), /*#__PURE__*/React.createElement("tbody", null, filas.map((f, i) => /*#__PURE__*/React.createElement("tr", {
-    key: f.cod,
-    className: "hover:bg-stone-50"
-  }, /*#__PURE__*/React.createElement("td", {
-    className: td + ' font-mono text-xs text-stone-600'
-  }, /*#__PURE__*/React.createElement("span", { className: "inline-flex items-center gap-1" },
-    f.cod,
-    f.revitOrigen && /*#__PURE__*/React.createElement("button", {
-      onClick: () => setVerRevitOrigen(f),
-      className: "text-amber-700 hover:text-amber-800",
-      title: 'Ver origen Revit (' + ((f.revitOrigen.elementos || []).length) + ' elemento(s))'
-    }, /*#__PURE__*/React.createElement(FolderOpen, { size: 12 }))
-  )), /*#__PURE__*/React.createElement("td", {
-    className: td
-  }, f.desc), /*#__PURE__*/React.createElement("td", {
-    className: td + ' text-stone-500'
-  }, f.unidad), /*#__PURE__*/React.createElement("td", {
-    className: td
-  }, /*#__PURE__*/React.createElement(EditCell, {
-    value: f.cant,
-    type: "number",
-    align: "right",
-    onCommit: v => updItem(i, {
-      cant: v
-    })
-  })), /*#__PURE__*/React.createElement("td", {
-    className: td + ' text-right'
-  }, motor.apuTiene(f.cod) ? /*#__PURE__*/React.createElement("span", {
-    className: "font-mono text-stone-600"
-  }, money(f.unit)) : /*#__PURE__*/React.createElement(EditCell, {
-    value: f.precioManual,
-    type: "number",
-    align: "right",
-    onCommit: v => updItem(i, {
-      precioManual: v
-    })
-  })), /*#__PURE__*/React.createElement("td", {
-    className: td + ' text-right font-mono text-stone-800'
-  }, money(f.total)), /*#__PURE__*/React.createElement("td", {
-    className: td + ' text-center'
-  }, /*#__PURE__*/React.createElement("button", {
-    onClick: () => delItem(i),
-    className: "text-stone-300 hover:text-red-600"
-  }, /*#__PURE__*/React.createElement(Trash2, {
-    size: 14
-  }))))), /*#__PURE__*/React.createElement("tr", {
-    className: "bg-stone-100 font-semibold"
-  }, /*#__PURE__*/React.createElement("td", {
-    className: td,
-    colSpan: 5
-  }, "COSTO DIRECTO DE OBRA"), /*#__PURE__*/React.createElement("td", {
-    className: td + ' text-right font-mono text-stone-900'
-  }, money(costoDirecto)), /*#__PURE__*/React.createElement("td", {
-    className: td
-  }))))), /*#__PURE__*/React.createElement("p", {
+    className: th + ' w-20'
+  }, "INC %"), /*#__PURE__*/React.createElement("th", {
+    className: th + ' w-10 noprint'
+  }))), /*#__PURE__*/React.createElement("tbody", null,
+    filasPorRubro.map(g => /*#__PURE__*/React.createElement(React.Fragment, { key: 'rub-' + g.rp },
+      /*#__PURE__*/React.createElement("tr", {
+        className: "bg-stone-700 text-white"
+      }, /*#__PURE__*/React.createElement("td", {
+        className: td + ' font-mono text-xs'
+      }, g.rp + '.00'), /*#__PURE__*/React.createElement("td", {
+        className: td + ' font-semibold uppercase tracking-wide text-xs',
+        colSpan: 4
+      }, g.nombre), /*#__PURE__*/React.createElement("td", {
+        className: td + ' text-right font-mono font-semibold'
+      }, money(g.total)), /*#__PURE__*/React.createElement("td", {
+        className: td + ' text-right font-mono font-semibold'
+      }, g.pctTotal.toFixed(1) + ' %'), /*#__PURE__*/React.createElement("td", {
+        className: td + ' noprint'
+      })),
+      g.items.map(f => /*#__PURE__*/React.createElement("tr", {
+        key: f.cod,
+        className: "hover:bg-stone-50"
+      }, /*#__PURE__*/React.createElement("td", {
+        className: td + ' font-mono text-xs text-stone-600 pl-4'
+      }, /*#__PURE__*/React.createElement("span", { className: "inline-flex items-center gap-1" },
+        f.cod,
+        f.revitOrigen && /*#__PURE__*/React.createElement("button", {
+          onClick: () => setVerRevitOrigen(f),
+          className: "text-amber-700 hover:text-amber-800",
+          title: 'Ver origen Revit (' + ((f.revitOrigen.elementos || []).length) + ' elemento(s))'
+        }, /*#__PURE__*/React.createElement(FolderOpen, { size: 12 }))
+      )), /*#__PURE__*/React.createElement("td", {
+        className: td
+      }, f.desc), /*#__PURE__*/React.createElement("td", {
+        className: td + ' text-stone-500'
+      }, f.unidad), /*#__PURE__*/React.createElement("td", {
+        className: td
+      }, /*#__PURE__*/React.createElement(EditCell, {
+        value: f.cant,
+        type: "number",
+        align: "right",
+        onCommit: v => updItem(f._idx, { cant: v })
+      })), /*#__PURE__*/React.createElement("td", {
+        className: td + ' text-right'
+      }, motor.apuTiene(f.cod) ? /*#__PURE__*/React.createElement("span", {
+        className: "font-mono text-stone-600"
+      }, money(f.unit)) : /*#__PURE__*/React.createElement(EditCell, {
+        value: f.precioManual,
+        type: "number",
+        align: "right",
+        onCommit: v => updItem(f._idx, { precioManual: v })
+      })), /*#__PURE__*/React.createElement("td", {
+        className: td + ' text-right font-mono text-stone-800'
+      }, money(f.total)), /*#__PURE__*/React.createElement("td", {
+        className: td + ' text-right font-mono text-stone-500'
+      }, g.total > 0 ? (f.total / g.total * 100).toFixed(1) + ' %' : '—'), /*#__PURE__*/React.createElement("td", {
+        className: td + ' text-center noprint'
+      }, /*#__PURE__*/React.createElement("button", {
+        onClick: () => delItem(f._idx),
+        className: "text-stone-300 hover:text-red-600"
+      }, /*#__PURE__*/React.createElement(Trash2, { size: 14 })))))
+    )),
+    /*#__PURE__*/React.createElement("tr", {
+      className: "bg-stone-100 font-semibold"
+    }, /*#__PURE__*/React.createElement("td", {
+      className: td,
+      colSpan: 5
+    }, "COSTO DIRECTO DE OBRA"), /*#__PURE__*/React.createElement("td", {
+      className: td + ' text-right font-mono text-stone-900'
+    }, money(costoDirecto)), /*#__PURE__*/React.createElement("td", {
+      className: td + ' text-right font-mono text-stone-700'
+    }, '100,0 %'), /*#__PURE__*/React.createElement("td", {
+      className: td + ' noprint'
+    }))))), /*#__PURE__*/React.createElement("p", {
     className: "text-xs text-stone-400 mt-2"
-  }, "El costo unitario de los \xEDtems con APU se calcula desde la biblioteca. Los \xEDtems sin APU usan precio manual.")), mostrar('coef') && /*#__PURE__*/React.createElement("div", {
+  }, "Los \xEDtems se agrupan por rubro principal. INC % en la fila del rubro es la incidencia sobre el total de la obra; en la fila del \xEDtem, es la incidencia dentro de su rubro.")), mostrar('coef') && /*#__PURE__*/React.createElement("div", {
     className: "max-w-2xl seccion-informe"
   }, /*#__PURE__*/React.createElement("p", {
     className: "text-sm text-stone-500 mb-3"
@@ -3329,7 +3374,7 @@ function ObraView({
     className: th + ' w-24'
   }, "\xCDtem"), /*#__PURE__*/React.createElement("th", {
     className: th
-  }, "Detalle"), /*#__PURE__*/React.createElement("th", {
+  }, "Tareas"), /*#__PURE__*/React.createElement("th", {
     className: th + ' w-16'
   }, "Un."), /*#__PURE__*/React.createElement("th", {
     className: th + ' w-20'
@@ -3339,37 +3384,55 @@ function ObraView({
     className: th + ' w-32'
   }, "Precio total"), /*#__PURE__*/React.createElement("th", {
     className: th + ' w-20'
-  }, "Inc. %"))), /*#__PURE__*/React.createElement("tbody", null, filas.map(f => {
-    const totalV = f.total * coef;
-    const granTotal = costoDirecto * coef;
-    return /*#__PURE__*/React.createElement("tr", {
-      key: f.cod,
-      className: "hover:bg-stone-50"
+  }, "INC %"))), /*#__PURE__*/React.createElement("tbody", null,
+    filasPorRubro.map(g => {
+      const totalRubroV = g.total * coef;
+      return /*#__PURE__*/React.createElement(React.Fragment, { key: 'rub-p-' + g.rp },
+        /*#__PURE__*/React.createElement("tr", {
+          className: "bg-stone-700 text-white"
+        }, /*#__PURE__*/React.createElement("td", {
+          className: td + ' font-mono text-xs'
+        }, g.rp + '.00'), /*#__PURE__*/React.createElement("td", {
+          className: td + ' font-semibold uppercase tracking-wide text-xs',
+          colSpan: 4
+        }, g.nombre), /*#__PURE__*/React.createElement("td", {
+          className: td + ' text-right font-mono font-semibold'
+        }, money(totalRubroV)), /*#__PURE__*/React.createElement("td", {
+          className: td + ' text-right font-mono font-semibold'
+        }, g.pctTotal.toFixed(1) + ' %')),
+        g.items.map(f => {
+          const totalV = f.total * coef;
+          return /*#__PURE__*/React.createElement("tr", {
+            key: f.cod,
+            className: "hover:bg-stone-50"
+          }, /*#__PURE__*/React.createElement("td", {
+            className: td + ' font-mono text-xs text-stone-600 pl-4'
+          }, f.cod), /*#__PURE__*/React.createElement("td", {
+            className: td
+          }, f.desc), /*#__PURE__*/React.createElement("td", {
+            className: td + ' text-stone-500'
+          }, f.unidad), /*#__PURE__*/React.createElement("td", {
+            className: td + ' text-right font-mono'
+          }, fmtN(f.cant)), /*#__PURE__*/React.createElement("td", {
+            className: td + ' text-right font-mono text-stone-600'
+          }, money(f.unit * coef)), /*#__PURE__*/React.createElement("td", {
+            className: td + ' text-right font-mono text-stone-800'
+          }, money(totalV)), /*#__PURE__*/React.createElement("td", {
+            className: td + ' text-right font-mono text-stone-500'
+          }, g.total > 0 ? (f.total / g.total * 100).toFixed(1) + ' %' : '—'));
+        })
+      );
+    }),
+    /*#__PURE__*/React.createElement("tr", {
+      className: "bg-stone-100 font-semibold"
     }, /*#__PURE__*/React.createElement("td", {
-      className: td + ' font-mono text-xs text-stone-600'
-    }, f.cod), /*#__PURE__*/React.createElement("td", {
-      className: td
-    }, f.desc), /*#__PURE__*/React.createElement("td", {
-      className: td + ' text-stone-500'
-    }, f.unidad), /*#__PURE__*/React.createElement("td", {
-      className: td + ' text-right font-mono'
-    }, fmtN(f.cant)), /*#__PURE__*/React.createElement("td", {
-      className: td + ' text-right font-mono text-stone-600'
-    }, money(f.unit * coef)), /*#__PURE__*/React.createElement("td", {
-      className: td + ' text-right font-mono text-stone-800'
-    }, money(totalV)), /*#__PURE__*/React.createElement("td", {
-      className: td + ' text-right font-mono text-stone-500'
-    }, granTotal > 0 ? (totalV / granTotal * 100).toFixed(1) : '0.0', "%"));
-  }), /*#__PURE__*/React.createElement("tr", {
-    className: "bg-stone-100 font-semibold"
-  }, /*#__PURE__*/React.createElement("td", {
-    className: td,
-    colSpan: 5
-  }, "PRECIO TOTAL DE OBRA"), /*#__PURE__*/React.createElement("td", {
-    className: td + ' text-right font-mono text-stone-900'
-  }, money(costoDirecto * coef)), /*#__PURE__*/React.createElement("td", {
-    className: td
-  })))))), mostrar('explosion') && /*#__PURE__*/React.createElement("div", { className: "seccion-informe" }, /*#__PURE__*/React.createElement("div", {
+      className: td,
+      colSpan: 5
+    }, "PRECIO TOTAL DE OBRA"), /*#__PURE__*/React.createElement("td", {
+      className: td + ' text-right font-mono text-stone-900'
+    }, money(costoDirecto * coef)), /*#__PURE__*/React.createElement("td", {
+      className: td + ' text-right font-mono text-stone-700'
+    }, '100,0 %')))))), mostrar('explosion') && /*#__PURE__*/React.createElement("div", { className: "seccion-informe" }, /*#__PURE__*/React.createElement("div", {
     className: "text-sm text-stone-500 mb-3"
   }, "Listado de compras: cantidades t\xE9cnicas de cada material, con desperdicio y convertidas a presentaci\xF3n comercial."), explosion.length === 0 && /*#__PURE__*/React.createElement("div", {
     className: "bg-white border border-stone-300 rounded"
@@ -6610,6 +6673,14 @@ function Precios({ obra, setObra, cat }) {
     const list = filtrar(cat.materiales || [], ['cod', 'desc', 'div']);
     const overrideMap = oPrec.materiales || {};
     const proveedorMap = oProv.materiales || {};
+    // Agrupar por División
+    const grupos = {};
+    list.forEach(m => {
+      const div = (m.div || 'Sin división').trim() || 'Sin división';
+      if (!grupos[div]) grupos[div] = [];
+      grupos[div].push(m);
+    });
+    const divsOrdenadas = Object.keys(grupos).sort((a, b) => a.localeCompare(b, 'es'));
     return e('div', { className: 'overflow-x-auto' },
       e('table', { className: 'w-full text-sm' },
         e('thead', null, e('tr', null,
@@ -6620,34 +6691,39 @@ function Precios({ obra, setObra, cat }) {
           e('th', { className: th + ' text-right' }, 'Precio en esta obra'),
           e('th', { className: th + ' w-48' }, 'Proveedor')
         )),
-        e('tbody', null, list.map(m => {
-          const precioGenerico = Number(m.precio) || 0;
-          const tieneOverride = (m.cod in overrideMap);
-          const precioOverride = tieneOverride ? Number(overrideMap[m.cod]) : null;
-          const precioEfectivo = tieneOverride ? precioOverride : precioGenerico;
-          const proveedor = proveedorMap[m.cod] || '';
-          return e('tr', { key: m.cod, className: 'hover:bg-stone-50' },
-            e('td', { className: td + ' font-mono text-xs text-stone-600' }, m.cod),
-            e('td', { className: td }, m.desc, m.div && e('span', { className: 'ml-2 text-xs text-stone-400' }, '· ' + m.div)),
-            e('td', { className: td + ' text-right text-stone-500' }, m.unidad || ''),
-            e('td', { className: td + ' text-right font-mono text-xs text-stone-400' }, precioGenerico > 0 ? money(precioGenerico) : '—'),
-            e('td', { className: td + (precioEfectivo > 0 ? '' : ' bg-amber-50') },
-              e(EditCell, {
-                value: tieneOverride ? overrideMap[m.cod] : '',
-                type: 'number',
-                align: 'right',
-                onCommit: v => setOverride('materiales', m.cod, v)
-              })
-            ),
-            e('td', { className: td },
-              e(EditCell, {
-                value: proveedor,
-                placeholder: 'genérico',
-                onCommit: v => setProveedor('materiales', m.cod, v)
-              })
-            )
-          );
-        }))
+        e('tbody', null, divsOrdenadas.map(divNombre => e(React.Fragment, { key: 'div-' + divNombre },
+          e('tr', { className: 'bg-stone-700 text-white' },
+            e('td', { className: td + ' font-semibold uppercase tracking-wide text-xs', colSpan: 6 }, divNombre)
+          ),
+          grupos[divNombre].map(m => {
+            const precioGenerico = Number(m.precio) || 0;
+            const tieneOverride = (m.cod in overrideMap);
+            const precioOverride = tieneOverride ? Number(overrideMap[m.cod]) : null;
+            const precioEfectivo = tieneOverride ? precioOverride : precioGenerico;
+            const proveedor = proveedorMap[m.cod] || '';
+            return e('tr', { key: m.cod, className: 'hover:bg-stone-50' },
+              e('td', { className: td + ' font-mono text-xs text-stone-600 pl-4' }, m.cod),
+              e('td', { className: td }, m.desc),
+              e('td', { className: td + ' text-right text-stone-500' }, m.unidad || ''),
+              e('td', { className: td + ' text-right font-mono text-xs text-stone-400' }, precioGenerico > 0 ? money(precioGenerico) : '—'),
+              e('td', { className: td + (precioEfectivo > 0 ? '' : ' bg-amber-50') },
+                e(EditCell, {
+                  value: tieneOverride ? overrideMap[m.cod] : '',
+                  type: 'number',
+                  align: 'right',
+                  onCommit: v => setOverride('materiales', m.cod, v)
+                })
+              ),
+              e('td', { className: td },
+                e(EditCell, {
+                  value: proveedor,
+                  placeholder: 'genérico',
+                  onCommit: v => setProveedor('materiales', m.cod, v)
+                })
+              )
+            );
+          })
+        )))
       ),
       list.length === 0 && e('div', { className: 'text-sm text-stone-400 italic p-4 text-center' }, 'No hay materiales en el catálogo.')
     );
