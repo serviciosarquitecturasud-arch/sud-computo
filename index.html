@@ -169,6 +169,15 @@ html, body, button, input, select, textarea {
 /* Texto visible solo al imprimir (oculto en pantalla) */
 .print-only { display: none; }
 @media print { .print-only { display: inline !important; } }
+
+/* Encabezados de tabla fijos al scrollear (solo en pantalla, no afecta print) */
+@media screen {
+  table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+  }
+}
 </style>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -1384,7 +1393,8 @@ function expandSeed(s) {
       insumo: a[2],
       cant: a[3] || 0,
       nota: a[4]
-    })).sort((x, y) => cmpCodigo(x.apu, y.apu) || (x.tipo || '').localeCompare(y.tipo || '') || cmpCodigo(x.insumo, y.insumo))
+    })).sort((x, y) => cmpCodigo(x.apu, y.apu) || (x.tipo || '').localeCompare(y.tipo || '') || cmpCodigo(x.insumo, y.insumo)),
+    deletedApus: []
   };
 }
 const fmt = n => (Number(n) || 0).toLocaleString('es-AR', {
@@ -2429,7 +2439,18 @@ function APUs({
 }) {
   const [sel, setSel] = useState('');
   const [q, setQ] = useState('');
+  const [showDeleted, setShowDeleted] = useState(false);
   const apuCods = useMemo(() => [...new Set(cat.biblioteca.map(b => b.apu))].sort(cmpCodigo), [cat.biblioteca]);
+  const deletedApus = useMemo(() => Array.isArray(cat.deletedApus) ? [...cat.deletedApus].sort(cmpCodigo) : [], [cat.deletedApus]);
+  const restoreApu = (cod) => {
+    setCat(c => ({
+      ...c,
+      deletedApus: (Array.isArray(c.deletedApus) ? c.deletedApus : []).filter(x => x !== cod),
+      biblioteca: [...c.biblioteca, { apu: cod, tipo: 'M', insumo: '', cant: 0, nota: '' }]
+    }));
+    setSel(cod);
+    setShowDeleted(false);
+  };
   const list = useMemo(() => apuCods.filter(c => {
     if (!q) return true;
     const r = motor.rubMap[c];
@@ -2456,10 +2477,15 @@ function APUs({
       setCat(c => ({
         ...c,
         rubros: [...c.rubros, { cod, rubro: rubroPadre, subrubro: '', desc, unidad }],
-        biblioteca: [...c.biblioteca, { apu: cod, tipo: 'M', insumo: '', cant: 0, nota: '' }]
+        biblioteca: [...c.biblioteca, { apu: cod, tipo: 'M', insumo: '', cant: 0, nota: '' }],
+        deletedApus: (Array.isArray(c.deletedApus) ? c.deletedApus : []).filter(x => x !== cod)
       }));
     } else {
-      setCat(c => ({ ...c, biblioteca: [...c.biblioteca, { apu: cod, tipo: 'M', insumo: '', cant: 0, nota: '' }] }));
+      setCat(c => ({
+        ...c,
+        biblioteca: [...c.biblioteca, { apu: cod, tipo: 'M', insumo: '', cant: 0, nota: '' }],
+        deletedApus: (Array.isArray(c.deletedApus) ? c.deletedApus : []).filter(x => x !== cod)
+      }));
     }
     setSel(cod);
   };
@@ -2502,7 +2528,10 @@ function APUs({
     if (!confirm(`¿Eliminar completamente el APU ${sel}? Se borrarán todas sus filas.`)) return;
     setCat(c => ({
       ...c,
-      biblioteca: c.biblioteca.filter(b => b.apu !== sel)
+      biblioteca: c.biblioteca.filter(b => b.apu !== sel),
+      deletedApus: Array.isArray(c.deletedApus) && c.deletedApus.includes(sel)
+        ? c.deletedApus
+        : [...(Array.isArray(c.deletedApus) ? c.deletedApus : []), sel]
     }));
     setSel(null);
   };
@@ -2526,11 +2555,56 @@ function APUs({
   }, /*#__PURE__*/React.createElement("div", {
     className: "w-72 shrink-0"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "mb-2"
+    className: "mb-2 flex items-center gap-2"
   }, /*#__PURE__*/React.createElement(Btn, {
     onClick: addApu,
     sm: true
-  }, /*#__PURE__*/React.createElement(Plus, { size: 14 }), "Nuevo APU")), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement(Plus, { size: 14 }), "Nuevo APU"), deletedApus.length > 0 && /*#__PURE__*/React.createElement("button", {
+    onClick: () => setShowDeleted(true),
+    className: "text-xs text-stone-500 hover:text-stone-800 hover:underline flex items-center gap-1"
+  }, /*#__PURE__*/React.createElement(Trash2, { size: 12 }), "Eliminados (" + deletedApus.length + ")")), showDeleted && /*#__PURE__*/React.createElement("div", {
+    className: "fixed inset-0 bg-stone-900 bg-opacity-50 z-50 flex items-center justify-center p-4",
+    onClick: () => setShowDeleted(false)
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bg-white rounded shadow-xl max-w-2xl w-full max-h-screen overflow-y-auto",
+    onClick: ev => ev.stopPropagation()
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "px-5 py-4 border-b border-stone-200 flex items-center justify-between"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "font-serif text-lg text-stone-800"
+  }, "APUs eliminados"), /*#__PURE__*/React.createElement("div", {
+    className: "text-xs text-stone-500 mt-0.5"
+  }, "Estos APUs fueron eliminados de tu cat\xE1logo. Pod\xE9s restaurarlos para volver a usarlos.")), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setShowDeleted(false),
+    className: "text-stone-400 hover:text-stone-800 text-2xl leading-none"
+  }, "\xD7")), /*#__PURE__*/React.createElement("div", {
+    className: "p-5"
+  }, deletedApus.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    className: "text-sm text-stone-400 italic text-center py-8"
+  }, "No hay APUs eliminados.") : /*#__PURE__*/React.createElement("table", {
+    className: "w-full text-sm"
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", {
+    className: th + " w-24"
+  }, "C\xF3digo"), /*#__PURE__*/React.createElement("th", {
+    className: th
+  }, "Descripci\xF3n del rubro"), /*#__PURE__*/React.createElement("th", {
+    className: th + " w-32 text-right"
+  }, ""))), /*#__PURE__*/React.createElement("tbody", null, deletedApus.map(cod => {
+    const rub = cat.rubros.find(r => r.cod === cod);
+    return /*#__PURE__*/React.createElement("tr", {
+      key: cod,
+      className: "hover:bg-stone-50"
+    }, /*#__PURE__*/React.createElement("td", {
+      className: td + " font-mono text-xs text-stone-600"
+    }, cod), /*#__PURE__*/React.createElement("td", {
+      className: td
+    }, rub ? rub.desc : /*#__PURE__*/React.createElement("span", { className: "text-stone-400 italic" }, "Rubro no encontrado en cat\xE1logo")), /*#__PURE__*/React.createElement("td", {
+      className: td + " text-right"
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: () => restoreApu(cod),
+      className: "text-xs text-amber-700 hover:text-amber-900 hover:underline"
+    }, "Restaurar")));
+  })))))), /*#__PURE__*/React.createElement("div", {
     className: "relative mb-2"
   }, /*#__PURE__*/React.createElement(Search, {
     size: 15,
@@ -7862,11 +7936,15 @@ function App() {
             manoObra: Array.isArray(parsed.manoObra) ? parsed.manoObra : seedFresh.manoObra,
             herramientas: Array.isArray(parsed.herramientas) ? parsed.herramientas : seedFresh.herramientas,
             rubros: Array.isArray(parsed.rubros) ? parsed.rubros : seedFresh.rubros,
-            biblioteca: Array.isArray(parsed.biblioteca) ? parsed.biblioteca : seedFresh.biblioteca
+            biblioteca: Array.isArray(parsed.biblioteca) ? parsed.biblioteca : seedFresh.biblioteca,
+            deletedApus: Array.isArray(parsed.deletedApus) ? parsed.deletedApus : []
           };
           // MERGE NO DESTRUCTIVO con el SEED: si el SEED tiene items nuevos
           // que no están en el catálogo guardado, agregarlos. NO se tocan
           // los items existentes (el usuario puede haberlos editado).
+          // EXCEPCIÓN: APUs marcados como eliminados (deletedApus) NO se re-inyectan,
+          // ni sus filas de biblioteca ni su rubro.
+          const deletedApusSet = new Set(catFinal.deletedApus);
           let added = { mat: 0, mo: 0, eq: 0, rub: 0, bib: 0 };
           // Materiales por código
           const matCods = new Set(catFinal.materiales.map(m => m.cod));
@@ -7883,15 +7961,17 @@ function App() {
           seedFresh.herramientas.forEach(h => {
             if (!eqCods.has(h.cod)) { catFinal.herramientas.push(h); added.eq++; }
           });
-          // Rubros por código
+          // Rubros por código (saltar los que corresponden a APUs eliminados)
           const rubCods = new Set(catFinal.rubros.map(r => r.cod));
           seedFresh.rubros.forEach(r => {
+            if (deletedApusSet.has(r.cod)) return;
             if (!rubCods.has(r.cod)) { catFinal.rubros.push(r); added.rub++; }
           });
-          // Biblioteca por triple clave: apu+tipo+insumo
+          // Biblioteca por triple clave: apu+tipo+insumo (saltar APUs eliminados)
           const bibKey = b => b.apu + '|' + b.tipo + '|' + b.insumo;
           const bibKeys = new Set(catFinal.biblioteca.map(bibKey));
           seedFresh.biblioteca.forEach(b => {
+            if (deletedApusSet.has(b.apu)) return;
             if (!bibKeys.has(bibKey(b))) { catFinal.biblioteca.push(b); added.bib++; }
           });
           const total = added.mat + added.mo + added.eq + added.rub + added.bib;
