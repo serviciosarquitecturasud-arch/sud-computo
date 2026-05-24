@@ -2406,7 +2406,7 @@ function Rubros({
     const esRubro = r.cod.endsWith('.00');
     return /*#__PURE__*/React.createElement("tr", {
       key: i,
-      className: esRubro ? 'bg-stone-700 text-white' : 'hover:bg-stone-50'
+      className: esRubro ? 'bg-stone-800 text-white' : 'hover:bg-stone-50'
     }, /*#__PURE__*/React.createElement("td", {
       className: td + (esRubro ? ' font-mono text-xs font-semibold' : ' font-mono text-xs text-stone-600 pl-4')
     }, r.cod), /*#__PURE__*/React.createElement("td", {
@@ -3206,7 +3206,7 @@ function ObraView({
   }))), /*#__PURE__*/React.createElement("tbody", null,
     filasPorRubro.map(g => /*#__PURE__*/React.createElement(React.Fragment, { key: 'rub-' + g.rp },
       /*#__PURE__*/React.createElement("tr", {
-        className: "bg-stone-700 text-white"
+        className: "bg-stone-800 text-white"
       }, /*#__PURE__*/React.createElement("td", {
         className: td + ' font-mono text-xs'
       }, g.rp + '.00'), /*#__PURE__*/React.createElement("td", {
@@ -3389,7 +3389,7 @@ function ObraView({
       const totalRubroV = g.total * coef;
       return /*#__PURE__*/React.createElement(React.Fragment, { key: 'rub-p-' + g.rp },
         /*#__PURE__*/React.createElement("tr", {
-          className: "bg-stone-700 text-white"
+          className: "bg-stone-800 text-white"
         }, /*#__PURE__*/React.createElement("td", {
           className: td + ' font-mono text-xs'
         }, g.rp + '.00'), /*#__PURE__*/React.createElement("td", {
@@ -6692,7 +6692,7 @@ function Precios({ obra, setObra, cat }) {
           e('th', { className: th + ' w-48' }, 'Proveedor')
         )),
         e('tbody', null, divsOrdenadas.map(divNombre => e(React.Fragment, { key: 'div-' + divNombre },
-          e('tr', { className: 'bg-stone-700 text-white' },
+          e('tr', { className: 'bg-stone-800 text-white' },
             e('td', { className: td + ' font-semibold uppercase tracking-wide text-xs', colSpan: 6 }, divNombre)
           ),
           grupos[divNombre].map(m => {
