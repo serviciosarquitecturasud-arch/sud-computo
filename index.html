@@ -172,6 +172,12 @@ html, body, button, input, select, textarea {
 
 /* Encabezados de tabla fijos al scrollear (solo en pantalla, no afecta print) */
 @media screen {
+  /* Los <div class="overflow-x-auto"> que envuelven una tabla crean un contexto
+     de scroll que rompe el sticky. Los neutralizamos: si una tabla excede el
+     ancho, que desborde libremente (en la práctica las tablas caben en el viewport). */
+  .overflow-x-auto:has(> table) {
+    overflow: visible;
+  }
   table thead th {
     position: sticky;
     top: 0;
@@ -1817,6 +1823,19 @@ const Btn = ({
 function ComboInsumo({ value, onChange, options, label }) {
   const [search, setSearch] = React.useState('');
   const [showList, setShowList] = React.useState(false);
+  const containerRef = React.useRef(null);
+  
+  // Cerrar la lista al hacer clic afuera del componente
+  React.useEffect(() => {
+    if (!showList) return;
+    const handleClickOutside = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setShowList(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showList]);
   
   // Ordenar por código ascendente
   const sorted = React.useMemo(() => {
@@ -1844,13 +1863,13 @@ function ComboInsumo({ value, onChange, options, label }) {
   
   const handleSelect = (item) => {
     const code = item.cod || item.item || item.cat || item.id || item.desc || item.descripcion || '';
-    console.log('🔵 handleSelect llamado:', { item, code });
     onChange(code);
     setSearch('');
     setShowList(false);
   };
   
   return /*#__PURE__*/React.createElement("div", { 
+    ref: containerRef,
     className: "w-full"
   },
     /*#__PURE__*/React.createElement("input", {
@@ -1876,7 +1895,6 @@ function ComboInsumo({ value, onChange, options, label }) {
           key: identifier + idx,
           onMouseDown: (e) => {
             e.preventDefault();
-            console.log('🟢 Click detectado:', { code, desc, identifier });
             handleSelect(item);
           },
           className: `px-3 py-1.5 text-xs cursor-pointer border-b border-stone-100 last:border-0 ${isSelected ? 'bg-amber-100' : 'hover:bg-stone-50'}`
@@ -2535,6 +2553,12 @@ function APUs({
     }));
     setSel(null);
   };
+  const updRubro = (patch) => {
+    setCat(c => ({
+      ...c,
+      rubros: c.rubros.map(r => r.cod === sel ? { ...r, ...patch } : r)
+    }));
+  };
   const grupos = [{
     t: 'M',
     label: 'Materiales',
@@ -2646,15 +2670,27 @@ function APUs({
   })), sel && /*#__PURE__*/React.createElement("div", {
     className: "bg-white border border-stone-300 rounded p-4"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "flex items-baseline justify-between border-b border-stone-200 pb-2 mb-3"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
-    className: "font-mono text-sm text-stone-500"
-  }, sel), /*#__PURE__*/React.createElement("span", {
-    className: "font-serif text-lg text-stone-800 ml-2"
-  }, rub ? rub.desc : '—'), rub && /*#__PURE__*/React.createElement("span", {
-    className: "text-xs text-stone-400 ml-2"
-  }, "por ", rub.unidad)), /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center gap-3"
+    className: "flex items-baseline justify-between border-b border-stone-200 pb-2 mb-3 gap-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-baseline gap-2 flex-1 min-w-0"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "font-mono text-sm text-stone-500 shrink-0"
+  }, sel), rub ? /*#__PURE__*/React.createElement("div", {
+    className: "font-serif text-lg text-stone-800 flex-1 min-w-0"
+  }, /*#__PURE__*/React.createElement(EditCell, {
+    value: rub.desc,
+    onCommit: v => updRubro({ desc: v })
+  })) : /*#__PURE__*/React.createElement("span", {
+    className: "font-serif text-lg text-stone-800"
+  }, "\u2014"), rub && /*#__PURE__*/React.createElement("div", {
+    className: "text-xs text-stone-400 flex items-baseline gap-1 shrink-0"
+  }, /*#__PURE__*/React.createElement("span", null, "por"), /*#__PURE__*/React.createElement("div", {
+    className: "w-16"
+  }, /*#__PURE__*/React.createElement(EditCell, {
+    value: rub.unidad,
+    onCommit: v => updRubro({ unidad: v })
+  })))), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-3 shrink-0"
   }, /*#__PURE__*/React.createElement("button", {
     onClick: delApu,
     className: "text-xs text-red-600 hover:text-red-800 hover:underline flex items-center gap-1"
