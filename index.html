@@ -509,7 +509,8 @@ const _IC = {
   Pencil: '<path d="M21.17 6.83a2.83 2.83 0 0 0-4-4L3 17v4h4Z"/><path d="m15 5 4 4"/>',
   CalendarRange: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M17 14h-6M13 18H7M7 14h.01M17 18h.01"/>',
   TrendingUp: '<path d="M22 7 13.5 15.5 8.5 10.5 2 17"/><path d="M16 7h6v6"/>',
-  GitBranch: '<path d="M6 3v12"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/>'
+  GitBranch: '<path d="M6 3v12"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/>',
+  Tag: '<path d="M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><circle cx="7" cy="7" r="1.5"/>'
 };
 function mkIcon(name) {
   return function Icon(props) {
@@ -554,7 +555,8 @@ const Building2 = mkIcon('Building2'),
   Pencil = mkIcon('Pencil'),
   CalendarRange = mkIcon('CalendarRange'),
   TrendingUp = mkIcon('TrendingUp'),
-  GitBranch = mkIcon('GitBranch');
+  GitBranch = mkIcon('GitBranch'),
+  Tag = mkIcon('Tag');
 
 /* === Grafico de lineas SVG propio (reemplaza recharts) === */
 function SvgLineChart({
@@ -1428,6 +1430,36 @@ function buildMotor(cat) {
     return 0;
   };
   const costoAPU = c => (bibMap[c] || []).reduce((s, b) => s + b.cant * costoInsumo(b.tipo, b.insumo), 0);
+
+  // ====== OVERRIDE POR OBRA ======
+  // Si la obra tiene un precio cargado en obra.precios[tipo][cod] usa ese;
+  // si no, fallback al precio global del catálogo.
+  const tieneOverride = (v) => v !== '' && v !== null && v !== undefined && !isNaN(Number(v));
+  const costoInsumoEnObra = (tipo, cod, obra) => {
+    const p = (obra && obra.precios) || {};
+    if (tipo === 'M') {
+      const pm = p.materiales || {};
+      if (cod in pm && tieneOverride(pm[cod])) return Number(pm[cod]) || 0;
+      return matMap[cod] ? (matMap[cod].precio || 0) : 0;
+    }
+    if (tipo === 'MO') {
+      const pmo = p.manoObra || {};
+      if (cod in pmo && tieneOverride(pmo[cod])) return Number(pmo[cod]) || 0;
+      return moMap[cod] ? (moMap[cod].valor || 0) : 0;
+    }
+    if (tipo === 'E') {
+      const ph = p.herramientas || {};
+      const h = herrMap[cod];
+      if (!h) return 0;
+      if (cod in ph && tieneOverride(ph[cod])) {
+        return costoHerramienta({ ...h, valor: Number(ph[cod]) || 0 });
+      }
+      return costoHerramienta(h);
+    }
+    return 0;
+  };
+  const costoAPUEnObra = (c, obra) => (bibMap[c] || []).reduce((s, b) => s + b.cant * costoInsumoEnObra(b.tipo, b.insumo, obra), 0);
+
   const insumoExiste = (tipo, cod) => tipo === 'M' ? !!matMap[cod] : tipo === 'MO' ? !!moMap[cod] : tipo === 'E' ? !!herrMap[cod] : false;
   const apuTiene = c => !!bibMap[c];
   const apuHuerfanos = c => (bibMap[c] || []).filter(b => !insumoExiste(b.tipo, b.insumo));
@@ -1439,6 +1471,8 @@ function buildMotor(cat) {
     bibMap,
     costoInsumo,
     costoAPU,
+    costoInsumoEnObra,
+    costoAPUEnObra,
     insumoExiste,
     apuTiene,
     apuHuerfanos
@@ -1478,7 +1512,7 @@ function buildPlan(obra, motor) {
       hsAy = 0,
       hsEq = 0;
     its.forEach(it => {
-      const cu = motor.apuTiene(it.cod) ? motor.costoAPU(it.cod) : it.precioManual || 0;
+      const cu = motor.apuTiene(it.cod) ? motor.costoAPUEnObra(it.cod, obra) : it.precioManual || 0;
       cd += cu * (it.cant || 0);
       (motor.bibMap[it.cod] || []).forEach(b => {
         const hh = b.cant * (it.cant || 0);
@@ -1669,7 +1703,7 @@ function buildSuministro(obra, planData, motor) {
     Object.entries(matAcum).forEach(([matCod, info]) => {
       const mat = motor.matMap[matCod];
       if (!mat) return; // material no en catálogo
-      const precio = Number(mat.precio) || 0;
+      const precio = motor.costoInsumoEnObra('M', matCod, obra);
       const desp = Number(mat.desp) || 0;
       const cantConDesp = info.cant * (1 + desp / 100);
       out.push({
@@ -1732,7 +1766,7 @@ function materialesTotalObra(obra, motor) {
   Object.entries(acum).forEach(([matCod, info]) => {
     const mat = motor.matMap[matCod];
     if (!mat) return;
-    const precio = Number(mat.precio) || 0;
+    const precio = motor.costoInsumoEnObra('M', matCod, obra);
     const desp = Number(mat.desp) || 0;
     const cantConDesp = info.cant * (1 + desp / 100);
     out.push({
@@ -2923,14 +2957,14 @@ function ObraView({
   onBack,
   informeSecciones
 }) {
-  const [tab, setTab] = useState('computo');
+  const [tab, setTab] = useState('caratula');
   // Helpers para modo "informe" (cuando se imprime el documento completo)
   const mostrar = (k) => informeSecciones ? informeSecciones.includes(k) : tab === k;
   const breakClass = informeSecciones ? "print-break-before" : "";
   const [picker, setPicker] = useState(false);
   const [verRevitOrigen, setVerRevitOrigen] = useState(null);
   const items = obra.items || [];
-  const cu = it => motor.apuTiene(it.cod) ? motor.costoAPU(it.cod) : it.precioManual || 0;
+  const cu = it => motor.apuTiene(it.cod) ? motor.costoAPUEnObra(it.cod, obra) : it.precioManual || 0;
   const filas = items.map(it => {
     const r = motor.rubMap[it.cod] || {};
     const unit = cu(it);
@@ -3100,13 +3134,13 @@ function ObraView({
     setObra: setObra
   })), /*#__PURE__*/React.createElement("div", {
     className: "noprint flex gap-1 border-b border-stone-300 mb-4"
-  }, [['computo', 'Planilla de cotización', Calculator], ['coef', 'Coeficiente', FileText], ['presup', 'Presupuesto', FileText], ['explosion', 'Explosión', ShoppingCart], ['plan', 'Plan de trabajo', CalendarRange], ['curva', 'Curva de inversión', TrendingUp], ['camino', 'Camino crítico', GitBranch], ['suministro', 'Suministro', Package]].map(([k, lbl, Icon]) => /*#__PURE__*/React.createElement("button", {
+  }, [['caratula', 'Carátula', BookOpen], ['precios', 'Precios', Tag], ['computo', 'Planilla de cotización', Calculator], ['coef', 'Coeficiente', FileText], ['presup', 'Presupuesto', FileText], ['explosion', 'Explosión', ShoppingCart], ['plan', 'Plan de trabajo', CalendarRange], ['curva', 'Curva de inversión', TrendingUp], ['camino', 'Camino crítico', GitBranch], ['suministro', 'Suministro', Package]].map(([k, lbl, Icon]) => /*#__PURE__*/React.createElement("button", {
     key: k,
     onClick: () => setTab(k),
     className: `flex items-center gap-1.5 px-3 py-2 text-sm border-b-2 -mb-px ${tab === k ? 'border-amber-600 text-stone-800 font-medium' : 'border-transparent text-stone-500 hover:text-stone-700'}`
   }, /*#__PURE__*/React.createElement(Icon, {
     size: 15
-  }), lbl))), mostrar('portada') && /*#__PURE__*/React.createElement(Portada, { obra: obra }), mostrar('computo') && /*#__PURE__*/React.createElement("div", { className: "seccion-informe" }, /*#__PURE__*/React.createElement("div", {
+  }), lbl))), mostrar('caratula') && /*#__PURE__*/React.createElement(Caratula, { obra: obra, setObra: setObra, motor: motor, cat: cat }), mostrar('precios') && /*#__PURE__*/React.createElement("div", { className: "seccion-informe" }, /*#__PURE__*/React.createElement(Precios, { obra: obra, setObra: setObra, cat: cat })), mostrar('portada') && /*#__PURE__*/React.createElement(Portada, { obra: obra }), mostrar('computo') && /*#__PURE__*/React.createElement("div", { className: "seccion-informe" }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center justify-between mb-3"
   }, /*#__PURE__*/React.createElement("div", {
     className: "text-sm text-stone-500"
@@ -4827,8 +4861,13 @@ function Obras({
   }, "Crear la primera"))), /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"
   }, obras.map(o => {
-    const cd = (o.items || []).reduce((s, it) => s + (motor.apuTiene(it.cod) ? motor.costoAPU(it.cod) : it.precioManual || 0) * (it.cant || 0), 0);
+    const cd = (o.items || []).reduce((s, it) => s + (motor.apuTiene(it.cod) ? motor.costoAPUEnObra(it.cod, o) : it.precioManual || 0) * (it.cant || 0), 0);
     const coef = calcCoef(o.coef || coefDefault());
+    const precioVenta = cd * coef;
+    const sup = o.superficies || {};
+    const m2Eq = (Number(sup.cub) || 0) + 0.5 * (Number(sup.semi) || 0) + 0.25 * (Number(sup.desc) || 0);
+    const pxM2 = m2Eq > 0 ? precioVenta / m2Eq : 0;
+    const fechaCot = (o.caratula && o.caratula.fechaCot) || '';
     return /*#__PURE__*/React.createElement("div", {
       key: o.id,
       className: "bg-white border border-stone-300 rounded p-4 flex flex-col"
@@ -4843,11 +4882,15 @@ function Obras({
       className: "text-xs text-stone-500 mt-0.5"
     }, o.comitente))), /*#__PURE__*/React.createElement("div", {
       className: "text-xs text-stone-500 mt-3 space-y-0.5"
-    }, /*#__PURE__*/React.createElement("div", null, (o.items || []).length, " \xEDtems computados"), /*#__PURE__*/React.createElement("div", null, "Costo directo: ", /*#__PURE__*/React.createElement("span", {
+    }, /*#__PURE__*/React.createElement("div", null, (o.items || []).length, " \xEDtems computados"),
+      fechaCot && /*#__PURE__*/React.createElement("div", null, "Cotizaci\xF3n: ", /*#__PURE__*/React.createElement("span", { className: "text-stone-700" }, fechaCot)),
+      /*#__PURE__*/React.createElement("div", null, "Costo directo: ", /*#__PURE__*/React.createElement("span", {
       className: "font-mono text-stone-700"
     }, money(cd))), /*#__PURE__*/React.createElement("div", null, "Precio de venta: ", /*#__PURE__*/React.createElement("span", {
       className: "font-mono text-stone-800"
-    }, money(cd * coef)))), /*#__PURE__*/React.createElement("div", {
+    }, money(precioVenta))),
+      m2Eq > 0 && /*#__PURE__*/React.createElement("div", null, "$/m\xB2 equivalente: ", /*#__PURE__*/React.createElement("span", { className: "font-mono text-amber-700" }, money(pxM2)))
+    ), /*#__PURE__*/React.createElement("div", {
       className: "flex gap-2 mt-3 pt-3 border-t border-stone-100"
     }, /*#__PURE__*/React.createElement(Btn, {
       onClick: () => onOpen(o.id),
@@ -6514,6 +6557,534 @@ function RevitImport({
   );
 }
 
+/* ============================ PRECIOS POR OBRA ============================ */
+/* Override por obra de los precios de materiales, mano de obra y equipos.
+ * La identidad de cada insumo (cod + desc + unidad + factor + presentación)
+ * sigue siendo GENÉRICA en la cinta negra; sólo el VALOR/PRECIO es local.
+ * Además, por cada insumo se puede anotar el PROVEEDOR/CONTRATISTA de esta obra. */
+function Precios({ obra, setObra, cat }) {
+  const e = React.createElement;
+  const [sub, setSub] = useState('mat'); // 'mat' | 'mo' | 'herr'
+  const [q, setQ] = useState('');
+
+  const oPrec = obra.precios || {};
+  const oProv = obra.proveedores || {};
+
+  const setOverride = (tipoKey, cod, val) => {
+    const next = { ...obra };
+    const prec = { ...(next.precios || {}) };
+    const seccion = { ...(prec[tipoKey] || {}) };
+    if (val === '' || val === null || val === undefined || (typeof val === 'string' && val.trim() === '')) {
+      delete seccion[cod];
+    } else {
+      seccion[cod] = Number(val) || 0;
+    }
+    prec[tipoKey] = seccion;
+    next.precios = prec;
+    setObra(next);
+  };
+
+  const setProveedor = (tipoKey, cod, val) => {
+    const next = { ...obra };
+    const prov = { ...(next.proveedores || {}) };
+    const seccion = { ...(prov[tipoKey] || {}) };
+    const cleaned = (val || '').trim();
+    if (cleaned === '') {
+      delete seccion[cod];
+    } else {
+      seccion[cod] = cleaned;
+    }
+    prov[tipoKey] = seccion;
+    next.proveedores = prov;
+    setObra(next);
+  };
+
+  const filtrar = (list, fields) => {
+    if (!q.trim()) return list;
+    const qq = q.trim().toLowerCase();
+    return list.filter(item => fields.some(f => String(item[f] || '').toLowerCase().includes(qq)));
+  };
+
+  // ---------- MATERIALES ----------
+  const renderMateriales = () => {
+    const list = filtrar(cat.materiales || [], ['cod', 'desc', 'div']);
+    const overrideMap = oPrec.materiales || {};
+    const proveedorMap = oProv.materiales || {};
+    return e('div', { className: 'overflow-x-auto' },
+      e('table', { className: 'w-full text-sm' },
+        e('thead', null, e('tr', null,
+          e('th', { className: th }, 'Ítem'),
+          e('th', { className: th }, 'Descripción'),
+          e('th', { className: th + ' text-right' }, 'Unidad'),
+          e('th', { className: th + ' text-right' }, 'Precio genérico'),
+          e('th', { className: th + ' text-right' }, 'Precio en esta obra'),
+          e('th', { className: th + ' w-48' }, 'Proveedor')
+        )),
+        e('tbody', null, list.map(m => {
+          const precioGenerico = Number(m.precio) || 0;
+          const tieneOverride = (m.cod in overrideMap);
+          const precioOverride = tieneOverride ? Number(overrideMap[m.cod]) : null;
+          const precioEfectivo = tieneOverride ? precioOverride : precioGenerico;
+          const proveedor = proveedorMap[m.cod] || '';
+          return e('tr', { key: m.cod, className: 'hover:bg-stone-50' },
+            e('td', { className: td + ' font-mono text-xs text-stone-600' }, m.cod),
+            e('td', { className: td }, m.desc, m.div && e('span', { className: 'ml-2 text-xs text-stone-400' }, '· ' + m.div)),
+            e('td', { className: td + ' text-right text-stone-500' }, m.unidad || ''),
+            e('td', { className: td + ' text-right font-mono text-xs text-stone-400' }, precioGenerico > 0 ? money(precioGenerico) : '—'),
+            e('td', { className: td + (precioEfectivo > 0 ? '' : ' bg-amber-50') },
+              e(EditCell, {
+                value: tieneOverride ? overrideMap[m.cod] : '',
+                type: 'number',
+                align: 'right',
+                onCommit: v => setOverride('materiales', m.cod, v)
+              })
+            ),
+            e('td', { className: td },
+              e(EditCell, {
+                value: proveedor,
+                placeholder: 'genérico',
+                onCommit: v => setProveedor('materiales', m.cod, v)
+              })
+            )
+          );
+        }))
+      ),
+      list.length === 0 && e('div', { className: 'text-sm text-stone-400 italic p-4 text-center' }, 'No hay materiales en el catálogo.')
+    );
+  };
+
+  // ---------- MANO DE OBRA ----------
+  const renderManoObra = () => {
+    const list = filtrar(cat.manoObra || [], ['cod', 'desc']);
+    const overrideMap = oPrec.manoObra || {};
+    const proveedorMap = oProv.manoObra || {};
+    return e('div', { className: 'overflow-x-auto' },
+      e('table', { className: 'w-full text-sm' },
+        e('thead', null, e('tr', null,
+          e('th', { className: th }, 'Ítem'),
+          e('th', { className: th }, 'Descripción'),
+          e('th', { className: th + ' text-right' }, 'Unidad'),
+          e('th', { className: th + ' text-right' }, 'Valor genérico'),
+          e('th', { className: th + ' text-right' }, 'Valor en esta obra'),
+          e('th', { className: th + ' w-48' }, 'Contratista')
+        )),
+        e('tbody', null, list.map(mo => {
+          const valorGenerico = Number(mo.valor) || 0;
+          const tieneOverride = (mo.cod in overrideMap);
+          const valorOverride = tieneOverride ? Number(overrideMap[mo.cod]) : null;
+          const valorEfectivo = tieneOverride ? valorOverride : valorGenerico;
+          const contratista = proveedorMap[mo.cod] || '';
+          return e('tr', { key: mo.cod, className: 'hover:bg-stone-50' },
+            e('td', { className: td + ' font-mono text-xs text-stone-600' }, mo.cod),
+            e('td', { className: td }, mo.desc),
+            e('td', { className: td + ' text-right text-stone-500' }, mo.unidad || 'hs'),
+            e('td', { className: td + ' text-right font-mono text-xs text-stone-400' }, valorGenerico > 0 ? money(valorGenerico) : '—'),
+            e('td', { className: td + (valorEfectivo > 0 ? '' : ' bg-amber-50') },
+              e(EditCell, {
+                value: tieneOverride ? overrideMap[mo.cod] : '',
+                type: 'number',
+                align: 'right',
+                onCommit: v => setOverride('manoObra', mo.cod, v)
+              })
+            ),
+            e('td', { className: td },
+              e(EditCell, {
+                value: contratista,
+                placeholder: 'genérico',
+                onCommit: v => setProveedor('manoObra', mo.cod, v)
+              })
+            )
+          );
+        }))
+      ),
+      list.length === 0 && e('div', { className: 'text-sm text-stone-400 italic p-4 text-center' }, 'No hay mano de obra en el catálogo.')
+    );
+  };
+
+  // ---------- HERRAMIENTAS / EQUIPOS ----------
+  const renderHerramientas = () => {
+    const list = filtrar(cat.herramientas || [], ['cod', 'desc']);
+    const overrideMap = oPrec.herramientas || {};
+    const proveedorMap = oProv.herramientas || {};
+    return e('div', null,
+      e('div', { className: 'text-xs text-stone-500 mb-3' },
+        'Se sobrescribe sólo el ',
+        e('span', { className: 'font-medium' }, 'valor'),
+        ' del equipo (precio de compra si es propio, tarifa por jornada si es alquilado). El resto de los campos (vida útil, combustible, reparaciones) sigue siendo genérico.'
+      ),
+      e('div', { className: 'overflow-x-auto' },
+        e('table', { className: 'w-full text-sm' },
+          e('thead', null, e('tr', null,
+            e('th', { className: th }, 'Ítem'),
+            e('th', { className: th }, 'Descripción'),
+            e('th', { className: th + ' text-right' }, 'Tenencia'),
+            e('th', { className: th + ' text-right' }, 'Valor genérico'),
+            e('th', { className: th + ' text-right' }, 'Valor en esta obra'),
+            e('th', { className: th + ' text-right' }, 'Costo/h'),
+            e('th', { className: th + ' w-48' }, 'Proveedor')
+          )),
+          e('tbody', null, list.map(h => {
+            const valorGenerico = Number(h.valor) || 0;
+            const tieneOverride = (h.cod in overrideMap);
+            const hParaCalculo = tieneOverride ? { ...h, valor: Number(overrideMap[h.cod]) || 0 } : h;
+            const costoH = costoHerramienta(hParaCalculo);
+            const proveedor = proveedorMap[h.cod] || '';
+            return e('tr', { key: h.cod, className: 'hover:bg-stone-50' },
+              e('td', { className: td + ' font-mono text-xs text-stone-600' }, h.cod),
+              e('td', { className: td }, h.desc),
+              e('td', { className: td + ' text-right text-stone-500 text-xs' }, h.tenencia || '—'),
+              e('td', { className: td + ' text-right font-mono text-xs text-stone-400' }, valorGenerico > 0 ? money(valorGenerico) : '—'),
+              e('td', { className: td },
+                e(EditCell, {
+                  value: tieneOverride ? overrideMap[h.cod] : '',
+                  type: 'number',
+                  align: 'right',
+                  onCommit: v => setOverride('herramientas', h.cod, v)
+                })
+              ),
+              e('td', { className: td + ' text-right font-mono text-stone-700' }, costoH > 0 ? money(costoH) : '—'),
+              e('td', { className: td },
+                e(EditCell, {
+                  value: proveedor,
+                  placeholder: 'genérico',
+                  onCommit: v => setProveedor('herramientas', h.cod, v)
+                })
+              )
+            );
+          }))
+        )
+      ),
+      list.length === 0 && e('div', { className: 'text-sm text-stone-400 italic p-4 text-center' }, 'No hay equipos en el catálogo.')
+    );
+  };
+
+  // ---------- CONTADORES ----------
+  const cMat = Object.keys(oPrec.materiales || {}).length + Object.keys(oProv.materiales || {}).length;
+  const cMO = Object.keys(oPrec.manoObra || {}).length + Object.keys(oProv.manoObra || {}).length;
+  const cHerr = Object.keys(oPrec.herramientas || {}).length + Object.keys(oProv.herramientas || {}).length;
+
+  return e('div', { className: 'space-y-4' },
+    e('div', { className: 'bg-amber-50 border border-amber-200 rounded p-3 text-sm text-stone-700' },
+      e('div', { className: 'flex items-start gap-2' },
+        e(Tag, { size: 16, className: 'text-amber-700 mt-0.5 shrink-0' }),
+        e('div', null,
+          e('div', { className: 'font-medium text-stone-800' }, 'Precios y proveedores por obra'),
+          e('p', { className: 'text-xs text-stone-600 mt-1' },
+            'Cargá el precio y el nombre del proveedor/contratista que trabaja en ',
+            e('span', { className: 'italic' }, 'esta obra'),
+            '. Si dejás el precio vacío, se usa el precio genérico del catálogo. Si dejás el proveedor vacío, queda como "genérico". ',
+            'La identidad del insumo (código, descripción, unidad, factor) sigue siendo genérica y se edita desde la cinta negra.'
+          )
+        )
+      )
+    ),
+
+    // Tabs internas
+    e('div', { className: 'flex items-center gap-1 border-b border-stone-200' },
+      [['mat', 'Materiales', cMat], ['mo', 'Mano de obra', cMO], ['herr', 'Equipos', cHerr]].map(([k, lbl, count]) =>
+        e('button', {
+          key: k,
+          onClick: () => setSub(k),
+          className: 'flex items-center gap-1.5 px-3 py-2 text-sm border-b-2 -mb-px ' + (sub === k ? 'border-amber-600 text-stone-800 font-medium' : 'border-transparent text-stone-500 hover:text-stone-700')
+        }, lbl, count > 0 && e('span', { className: 'inline-block px-1.5 py-0 text-xs rounded bg-emerald-100 text-emerald-700' }, count))
+      )
+    ),
+
+    // Filtro
+    e('div', { className: 'flex items-center gap-2' },
+      e(Search, { size: 14, className: 'text-stone-400' }),
+      e('input', {
+        type: 'text',
+        value: q,
+        onChange: ev => setQ(ev.target.value),
+        placeholder: 'Buscar por código, descripción o división…',
+        className: 'flex-1 border border-stone-300 rounded px-2 py-1 text-sm'
+      })
+    ),
+
+    // Contenido según sub-tab
+    e('div', null,
+      sub === 'mat' && renderMateriales(),
+      sub === 'mo' && renderManoObra(),
+      sub === 'herr' && renderHerramientas()
+    )
+  );
+}
+
+/* ============================ CARÁTULA OBRA ============================ */
+function Caratula({ obra, setObra, motor, cat }) {
+  const e = React.createElement;
+
+  // ====== ESTADO EDITABLE ======
+  const car = obra.caratula || {};
+  const sup = obra.superficies || {};
+  const setCar = patch => setObra({ ...obra, caratula: { ...(obra.caratula || {}), ...patch } });
+  const setSup = patch => setObra({ ...obra, superficies: { ...(obra.superficies || {}), ...patch } });
+
+  // ====== CÁLCULOS BASE ======
+  const cub = Number(sup.cub) || 0;
+  const semi = Number(sup.semi) || 0;
+  const desc = Number(sup.desc) || 0;
+  const m2Total = cub + semi + desc;
+  const m2Equiv = cub + 0.5 * semi + 0.25 * desc;
+
+  const items = obra.items || [];
+  const cu = it => motor.apuTiene(it.cod) ? motor.costoAPUEnObra(it.cod, obra) : (it.precioManual || 0);
+  const costoDirecto = items.reduce((s, it) => s + cu(it) * (it.cant || 0), 0);
+  const coef = calcCoef(obra.coef || coefDefault());
+  const precioVenta = costoDirecto * coef.total;
+
+  const tc = Number(car.tipoCambio) || 0;
+  const pxM2Eq = m2Equiv > 0 ? precioVenta / m2Equiv : 0;
+  const usdM2Eq = tc > 0 && m2Equiv > 0 ? pxM2Eq / tc : 0;
+
+  // ====== INCIDENCIA POR RUBRO ======
+  // Diccionario de nombres de rubros principales (ej. "4" → "MAMPOSTERÍA")
+  const rubrosNombres = {};
+  (cat.rubros || []).forEach(r => {
+    const rp = (r.cod || '').split('.')[0];
+    if (r.cod && (r.cod.endsWith('.00') || r.cod === rp)) {
+      rubrosNombres[rp] = r.desc;
+    } else if (!rubrosNombres[rp]) {
+      rubrosNombres[rp] = r.desc; // fallback al primer subrubro
+    }
+  });
+
+  const incRubros = {};
+  items.forEach(it => {
+    const total = cu(it) * (it.cant || 0);
+    const rp = (it.cod || '').split('.')[0];
+    if (!incRubros[rp]) incRubros[rp] = { rp, costo: 0, items: 0 };
+    incRubros[rp].costo += total;
+    incRubros[rp].items += 1;
+  });
+  const top5Rubros = Object.values(incRubros)
+    .map(r => ({
+      ...r,
+      desc: rubrosNombres[r.rp] || ('Rubro ' + r.rp),
+      pct: costoDirecto > 0 ? (r.costo / costoDirecto) * 100 : 0
+    }))
+    .sort((a, b) => b.costo - a.costo)
+    .slice(0, 5);
+
+  // ====== INCIDENCIA POR MATERIAL (TRANSVERSAL) ======
+  const matIncidencia = {};
+  items.forEach(it => {
+    const cantItem = it.cant || 0;
+    (motor.bibMap[it.cod] || []).forEach(b => {
+      if (b.tipo === 'M') {
+        const m = motor.matMap[b.insumo];
+        const precioMat = motor.costoInsumoEnObra('M', b.insumo, obra);
+        if (m && precioMat > 0) {
+          const cantMatTotal = b.cant * cantItem;
+          const costoMat = cantMatTotal * precioMat;
+          if (!matIncidencia[b.insumo]) {
+            matIncidencia[b.insumo] = { cod: b.insumo, desc: m.desc, unidad: m.unidad, cant: 0, costo: 0 };
+          }
+          matIncidencia[b.insumo].cant += cantMatTotal;
+          matIncidencia[b.insumo].costo += costoMat;
+        }
+      }
+    });
+  });
+  const top5Mat = Object.values(matIncidencia)
+    .map(m => ({ ...m, pct: costoDirecto > 0 ? (m.costo / costoDirecto) * 100 : 0 }))
+    .sort((a, b) => b.costo - a.costo)
+    .slice(0, 5);
+
+  // ====== HELPER: barra horizontal de incidencia ======
+  const BarRow = ({ label, sub, monto, pct, color, k }) =>
+    e('div', { key: k, className: 'mb-2.5' },
+      e('div', { className: 'flex items-baseline justify-between text-sm mb-1 gap-2' },
+        e('div', { className: 'flex-1 min-w-0' },
+          e('div', { className: 'text-stone-700 truncate' }, label),
+          sub && e('div', { className: 'text-stone-400 text-xs' }, sub)
+        ),
+        e('div', { className: 'text-right shrink-0' },
+          e('div', { className: 'font-mono text-stone-800 text-sm' }, money(monto)),
+          e('div', { className: 'text-stone-500 text-xs font-mono' }, fmtN(pct) + ' %')
+        )
+      ),
+      e('div', { className: 'h-2 bg-stone-100 rounded overflow-hidden' },
+        e('div', {
+          className: 'h-full',
+          style: { width: Math.min(100, pct) + '%', backgroundColor: color }
+        })
+      )
+    );
+
+  // ====== RENDER ======
+  return e('div', { className: 'space-y-4 seccion-informe' },
+
+    // ─── DATOS GENERALES ───
+    e('div', { className: 'bg-white border border-stone-200 rounded p-4' },
+      e('div', { className: 'flex items-center gap-2 mb-3' },
+        e(FileText, { size: 16, className: 'text-stone-500' }),
+        e('h3', { className: 'font-serif text-lg text-stone-800' }, 'Datos generales')
+      ),
+      e('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-3 text-sm' },
+        e('div', null,
+          e('div', { className: 'text-xs uppercase tracking-wider text-stone-500 mb-1' }, 'Profesional responsable'),
+          e(EditCell, { value: car.profesional || '', onCommit: v => setCar({ profesional: v }) })
+        ),
+        e('div', null,
+          e('div', { className: 'text-xs uppercase tracking-wider text-stone-500 mb-1' }, 'Estado'),
+          e('select', {
+            value: car.estado || 'anteproyecto',
+            onChange: ev => setCar({ estado: ev.target.value }),
+            className: 'w-full border border-stone-300 rounded px-2 py-1 text-sm bg-white'
+          },
+            e('option', { value: 'anteproyecto' }, 'Anteproyecto'),
+            e('option', { value: 'ejecutivo' }, 'Proyecto ejecutivo'),
+            e('option', { value: 'obra' }, 'En obra'),
+            e('option', { value: 'cerrada' }, 'Obra cerrada')
+          )
+        ),
+        e('div', null,
+          e('div', { className: 'text-xs uppercase tracking-wider text-stone-500 mb-1' }, 'Fecha de cotización'),
+          e(EditCell, { value: car.fechaCot || '', onCommit: v => setCar({ fechaCot: v }) })
+        ),
+        e('div', null,
+          e('div', { className: 'text-xs uppercase tracking-wider text-stone-500 mb-1' }, 'Notas / observaciones'),
+          e(EditCell, { value: car.notas || '', onCommit: v => setCar({ notas: v }) })
+        )
+      )
+    ),
+
+    // ─── SUPERFICIES ───
+    e('div', { className: 'bg-white border border-stone-200 rounded p-4' },
+      e('div', { className: 'flex items-center gap-2 mb-1' },
+        e(Layers, { size: 16, className: 'text-stone-500' }),
+        e('h3', { className: 'font-serif text-lg text-stone-800' }, 'Superficies'),
+        e('span', { className: 'text-xs text-stone-400' }, '(en m²)')
+      ),
+      e('p', { className: 'text-xs text-stone-500 mb-3' },
+        'Cargar manualmente o leer del schedule "Áreas (Rentable)" del Revit. ',
+        e('span', { className: 'italic' }, 'Ponderación: cubierto + 0,5·semicubierto + 0,25·descubierto.')
+      ),
+      e('div', { className: 'grid grid-cols-3 gap-3 text-sm mb-3' },
+        e('div', null,
+          e('div', { className: 'text-xs uppercase tracking-wider text-stone-500 mb-1' }, 'Cubierta'),
+          e(EditCell, { value: cub, type: 'number', align: 'right', onCommit: v => setSup({ cub: v }) })
+        ),
+        e('div', null,
+          e('div', { className: 'text-xs uppercase tracking-wider text-stone-500 mb-1' }, 'Semicubierta'),
+          e(EditCell, { value: semi, type: 'number', align: 'right', onCommit: v => setSup({ semi: v }) })
+        ),
+        e('div', null,
+          e('div', { className: 'text-xs uppercase tracking-wider text-stone-500 mb-1' }, 'Descubierta'),
+          e(EditCell, { value: desc, type: 'number', align: 'right', onCommit: v => setSup({ desc: v }) })
+        )
+      ),
+      e('div', { className: 'grid grid-cols-2 gap-3 pt-3 border-t border-stone-100' },
+        e('div', null,
+          e('div', { className: 'text-xs text-stone-500' }, 'Total m²'),
+          e('div', { className: 'text-xl font-mono text-stone-800' }, fmtN(m2Total))
+        ),
+        e('div', null,
+          e('div', { className: 'text-xs text-stone-500' }, 'm² equivalentes ponderados'),
+          e('div', { className: 'text-xl font-mono text-amber-700' }, fmtN(m2Equiv))
+        )
+      )
+    ),
+
+    // ─── RESUMEN ECONÓMICO ───
+    e('div', { className: 'bg-white border border-stone-200 rounded p-4' },
+      e('div', { className: 'flex items-center gap-2 mb-3' },
+        e(Calculator, { size: 16, className: 'text-stone-500' }),
+        e('h3', { className: 'font-serif text-lg text-stone-800' }, 'Resumen económico')
+      ),
+      e('div', { className: 'grid grid-cols-2 md:grid-cols-4 gap-3 mb-4' },
+        e('div', null,
+          e('div', { className: 'text-xs text-stone-500' }, 'Ítems computados'),
+          e('div', { className: 'text-lg font-mono text-stone-800' }, items.length)
+        ),
+        e('div', null,
+          e('div', { className: 'text-xs text-stone-500' }, 'Costo directo'),
+          e('div', { className: 'text-lg font-mono text-stone-800' }, money(costoDirecto))
+        ),
+        e('div', null,
+          e('div', { className: 'text-xs text-stone-500' }, 'Coeficiente de pase'),
+          e('div', { className: 'text-lg font-mono text-stone-800' }, fmtN(coef.total))
+        ),
+        e('div', null,
+          e('div', { className: 'text-xs text-stone-500' }, 'Precio de venta'),
+          e('div', { className: 'text-lg font-mono text-amber-700' }, money(precioVenta))
+        )
+      ),
+      e('div', { className: 'pt-3 border-t border-stone-100 grid grid-cols-1 md:grid-cols-3 gap-3 text-sm' },
+        e('div', null,
+          e('div', { className: 'text-xs uppercase tracking-wider text-stone-500 mb-1' }, 'Tipo de cambio (USD)'),
+          e(EditCell, { value: tc, type: 'number', align: 'right', onCommit: v => setCar({ tipoCambio: v, fechaTC: new Date().toISOString().slice(0, 10) }) }),
+          car.fechaTC && e('div', { className: 'text-xs text-stone-400 mt-1' }, 'TC al ' + car.fechaTC)
+        ),
+        e('div', null,
+          e('div', { className: 'text-xs text-stone-500' }, '$ por m² equivalente'),
+          e('div', { className: 'text-lg font-mono text-stone-800' }, m2Equiv > 0 ? money(pxM2Eq) : '—')
+        ),
+        e('div', null,
+          e('div', { className: 'text-xs text-stone-500' }, 'USD por m² equivalente'),
+          e('div', { className: 'text-lg font-mono text-stone-800' }, tc > 0 && m2Equiv > 0 ? 'USD ' + fmtN(usdM2Eq) : '—')
+        )
+      )
+    ),
+
+    // ─── TOP 5 RUBROS ───
+    e('div', { className: 'bg-white border border-stone-200 rounded p-4' },
+      e('div', { className: 'flex items-center gap-2 mb-3' },
+        e(ListTree, { size: 16, className: 'text-stone-500' }),
+        e('h3', { className: 'font-serif text-lg text-stone-800' }, 'Top 5 rubros por incidencia')
+      ),
+      top5Rubros.length === 0
+        ? e('div', { className: 'text-sm text-stone-400 italic' }, 'No hay ítems computados todavía.')
+        : top5Rubros.map(r => e(BarRow, {
+            k: 'r' + r.rp,
+            label: r.rp + '. ' + r.desc,
+            sub: r.items + ' ítem' + (r.items > 1 ? 's' : ''),
+            monto: r.costo,
+            pct: r.pct,
+            color: '#d97706'
+          }))
+    ),
+
+    // ─── TOP 5 MATERIALES ───
+    e('div', { className: 'bg-white border border-stone-200 rounded p-4' },
+      e('div', { className: 'flex items-center gap-2 mb-3' },
+        e(Package, { size: 16, className: 'text-stone-500' }),
+        e('h3', { className: 'font-serif text-lg text-stone-800' }, 'Top 5 materiales por incidencia transversal')
+      ),
+      top5Mat.length === 0
+        ? e('div', { className: 'text-sm text-stone-400 italic' }, 'Cargá precios de materiales y APUs en la biblioteca para ver la incidencia transversal.')
+        : top5Mat.map(m => e(BarRow, {
+            k: 'm' + m.cod,
+            label: m.desc,
+            sub: fmtN(m.cant) + ' ' + (m.unidad || ''),
+            monto: m.costo,
+            pct: m.pct,
+            color: '#78716c'
+          }))
+    ),
+
+    // ─── REVIT VINCULADO ───
+    obra.revitVinculo && obra.revitVinculo.rutaArchivo && e('div', { className: 'bg-white border border-stone-200 rounded p-4' },
+      e('div', { className: 'flex items-center gap-2 mb-2' },
+        e(FolderOpen, { size: 16, className: 'text-stone-500' }),
+        e('h3', { className: 'font-serif text-lg text-stone-800' }, 'Modelo Revit vinculado')
+      ),
+      e('div', { className: 'text-sm space-y-1' },
+        e('div', null,
+          e('span', { className: 'text-stone-500' }, 'Archivo: '),
+          e('span', { className: 'font-mono text-xs break-all' }, obra.revitVinculo.rutaArchivo)
+        ),
+        obra.revitVinculo.ultimoImport && e('div', null,
+          e('span', { className: 'text-stone-500' }, 'Último import: '),
+          new Date(obra.revitVinculo.ultimoImport).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+        )
+      )
+    )
+  );
+}
+
 /* ============================ PORTADA INFORME ============================ */
 function Portada({ obra }) {
   const fecha = new Date().toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' });
@@ -7026,98 +7597,73 @@ function useDriveRecoveryCheck(obras) {
 function DriveButton() {
   const e = React.createElement;
   const auth = useGoogleAuth();
-  
-  // HITO 36: Detectar si estamos en file:// (Drive no funciona ahí)
+
+  // Estilo base unificado para encajar en cinta oscura
+  const pillBase = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '5px',
+    padding: '3px 9px',
+    borderRadius: '999px',
+    fontSize: '11px',
+    fontFamily: 'system-ui, sans-serif',
+    whiteSpace: 'nowrap',
+    fontWeight: 500,
+    letterSpacing: '0.01em',
+    border: '1px solid rgba(255,255,255,0.12)'
+  };
+
+  // file:// → Drive no funciona
   const esFileProtocol = typeof window !== 'undefined' && window.location.protocol === 'file:';
-  
   if (esFileProtocol) {
     return e('div', {
-      style: {
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '6px',
-        background: 'rgba(254, 202, 87, 0.3)',
-        border: '1px solid rgba(217, 119, 6, 0.4)',
-        color: '#78350f',
-        padding: '6px 12px',
-        borderRadius: '999px',
-        fontSize: '12px',
-        fontFamily: 'system-ui, sans-serif',
-        whiteSpace: 'nowrap',
-        cursor: 'help'
-      },
+      style: { ...pillBase, background: 'rgba(217, 119, 6, 0.25)', color: '#fcd34d', cursor: 'help' },
       title: 'Drive no funciona si abriste el archivo con doble click. Abrí desde http://localhost:8000/...'
-    }, '⚠️ Abrí desde localhost para usar Drive');
+    }, '⚠ Local sin Drive');
   }
-  
+
   if (!auth.initialized) {
-    return e('div', {
-      style: {
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '6px',
-        background: 'rgba(255,255,255,0.5)',
-        color: '#57534e',
-        padding: '6px 12px',
-        borderRadius: '999px',
-        fontSize: '12px',
-        fontFamily: 'system-ui, sans-serif'
+    // Si ya hay un token previo válido en sessionStorage, mostrar verde optimista
+    // en lugar de gris "Iniciando" — evita el parpadeo al recargar la página.
+    let tokenPrevio = null;
+    try {
+      const raw = sessionStorage.getItem('cmp_gauth_token');
+      if (raw) {
+        const t = JSON.parse(raw);
+        if (t && t.expires_at && t.expires_at > Date.now() + 60000) tokenPrevio = t;
       }
-    }, '☁️ Iniciando Drive...');
+    } catch (e) {}
+    if (tokenPrevio) {
+      return e('div', {
+        style: { ...pillBase, background: 'rgba(34, 197, 94, 0.18)', color: '#86efac' },
+        title: 'Reconectando a Drive…'
+      }, '☁ ' + (tokenPrevio.user_email || 'Conectado'));
+    }
+    return e('div', {
+      style: { ...pillBase, background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.55)' }
+    }, '☁ Iniciando…');
   }
-  
+
   if (!auth.authed) {
     return e('button', {
       onClick: () => GoogleAuth.login(),
-      style: {
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '6px',
-        background: 'rgba(255,255,255,0.7)',
-        color: '#1c1917',
-        border: '1px solid rgba(28,25,23,0.15)',
-        padding: '6px 12px',
-        borderRadius: '999px',
-        fontSize: '12px',
-        cursor: 'pointer',
-        fontFamily: 'system-ui, sans-serif',
-        whiteSpace: 'nowrap',
-        fontWeight: 500
-      },
+      style: { ...pillBase, background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.9)', cursor: 'pointer' },
       title: 'Conectar tu cuenta de Google Drive para backup automático en la nube'
-    }, '☁️ Conectar Drive');
+    }, '☁ Conectar Drive');
   }
-  
-  // Logueado
+
+  // Autenticado
   const driveStatus = window.SaveTracker ? window.SaveTracker.driveStatus : 'idle';
   const isSubiendo = driveStatus === 'syncing';
-  
-  // HITO 36: Mostrar email si lo tenemos, sino "Conectado"
   const labelCuenta = auth.email || 'Conectado';
-  
+
   return e('div', {
-    style: {
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: '6px',
-      background: 'rgba(167, 243, 208, 0.4)',
-      border: '1px solid rgba(5, 150, 105, 0.3)',
-      padding: '4px 4px 4px 10px',
-      borderRadius: '999px',
-      fontSize: '12px',
-      fontFamily: 'system-ui, sans-serif'
-    }
+    style: { ...pillBase, background: 'rgba(34, 197, 94, 0.18)', color: '#86efac', padding: '2px 3px 2px 9px', gap: '4px' }
   },
     e('span', {
-      style: { 
-        color: '#064e3b',
-        maxWidth: '180px',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        whiteSpace: 'nowrap'
-      },
+      style: { maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
       title: 'Conectado a Drive: ' + labelCuenta
-    }, '☁️ ' + labelCuenta),
+    }, '☁ ' + labelCuenta),
     e('button', {
       onClick: () => {
         if (confirm('¿Desconectar de Google Drive? Tus datos locales no se borran, pero dejará de sincronizar.')) {
@@ -7125,38 +7671,34 @@ function DriveButton() {
         }
       },
       style: {
-        background: 'rgba(255,255,255,0.6)',
-        color: '#57534e',
+        background: 'rgba(255,255,255,0.1)',
+        color: 'rgba(255,255,255,0.75)',
         border: 'none',
-        padding: '4px 8px',
+        padding: '2px 6px',
         borderRadius: '999px',
-        fontSize: '11px',
+        fontSize: '10px',
         cursor: 'pointer',
         fontFamily: 'system-ui, sans-serif'
       },
       title: 'Desconectar'
     }, '✕'),
-    // Botón "Subir ahora" - HITO 36: deshabilitado mientras sube
     e('button', {
-      onClick: () => {
-        if (isSubiendo) return;
-        DriveSync.syncNow();
-      },
+      onClick: () => { if (!isSubiendo) DriveSync.syncNow(); },
       disabled: isSubiendo,
       style: {
-        background: isSubiendo ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.7)',
-        color: isSubiendo ? '#a8a29e' : '#1c1917',
-        border: '1px solid rgba(28,25,23,0.15)',
-        padding: '4px 10px',
+        background: isSubiendo ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.12)',
+        color: isSubiendo ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.9)',
+        border: 'none',
+        padding: '2px 8px',
         borderRadius: '999px',
-        fontSize: '11px',
+        fontSize: '10px',
         cursor: isSubiendo ? 'not-allowed' : 'pointer',
         fontFamily: 'system-ui, sans-serif',
         whiteSpace: 'nowrap',
         fontWeight: 500
       },
-      title: isSubiendo ? 'Subida en curso...' : 'Forzar backup ahora a Drive'
-    }, isSubiendo ? '⏳ Subiendo...' : '⤴ Subir')
+      title: isSubiendo ? 'Subida en curso…' : 'Forzar backup ahora a Drive'
+    }, isSubiendo ? '⏳ Subiendo…' : '⤴ Subir')
   );
 }
 
@@ -7164,78 +7706,57 @@ function SaveIndicator() {
   const e = React.createElement;
   const s = useSaveStatus();
   const [, force] = useState(0);
-  // Auto-refresh cada 10s para actualizar "hace X tiempo"
   useEffect(() => {
     const id = setInterval(() => force(x => x + 1), 10000);
     return () => clearInterval(id);
   }, []);
 
-  let icon, text, color, bg;
-  
+  // Estilo base para fondo oscuro
+  const pillBase = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '5px',
+    padding: '3px 9px',
+    borderRadius: '999px',
+    fontSize: '11px',
+    fontFamily: 'system-ui, sans-serif',
+    whiteSpace: 'nowrap',
+    fontWeight: 500,
+    letterSpacing: '0.01em',
+    border: '1px solid rgba(255,255,255,0.12)'
+  };
+
+  let icon, text, bg, color;
   if (s.status === 'saving') {
-    icon = '⏳';
-    text = 'Guardando...';
-    color = '#1c1917';
-    bg = 'rgba(255,255,255,0.55)';
+    icon = '⏳'; text = 'Guardando…';
+    bg = 'rgba(255,255,255,0.08)'; color = 'rgba(255,255,255,0.9)';
   } else if (s.status === 'error') {
-    icon = '⚠️';
-    text = 'Error al guardar';
-    color = '#7f1d1d';
-    bg = 'rgba(254,226,226,0.85)';
+    icon = '⚠'; text = 'Error al guardar';
+    bg = 'rgba(220, 38, 38, 0.25)'; color = '#fca5a5';
   } else if (s.status === 'saved') {
-    icon = '✓';
-    text = s.lastSaved ? `Guardado ${tiempoRelativo(s.lastSaved)}` : 'Guardado';
-    color = '#14532d';
-    bg = 'rgba(220,252,231,0.75)';
+    icon = '✓'; text = s.lastSaved ? 'Guardado ' + tiempoRelativo(s.lastSaved) : 'Guardado';
+    bg = 'rgba(34, 197, 94, 0.18)'; color = '#86efac';
   } else {
-    icon = '○';
-    text = 'Listo';
-    color = '#1c1917';
-    bg = 'rgba(255,255,255,0.55)';
+    icon = '○'; text = 'Listo';
+    bg = 'rgba(255,255,255,0.06)'; color = 'rgba(255,255,255,0.65)';
   }
 
-  // Indicador secundario para Drive (cuando se active en HITO 33)
-  let driveIcon = '', driveText = '', driveBg = '';
+  // Indicador de Drive (secundario)
+  let driveIcon = '', driveText = '', driveBg = '', driveColor = color;
   if (s.driveStatus !== 'off') {
-    if (s.driveStatus === 'syncing') { driveIcon = '☁️↑'; driveText = 'Subiendo a Drive...'; driveBg = 'rgba(219,234,254,0.85)'; }
-    else if (s.driveStatus === 'synced') { driveIcon = '☁️✓'; driveText = s.driveLastSync ? `Drive ${tiempoRelativo(s.driveLastSync)}` : 'Sincronizado'; driveBg = 'rgba(220,252,231,0.75)'; }
-    else if (s.driveStatus === 'idle') { driveIcon = '☁️'; driveText = 'Esperando cambios'; driveBg = 'rgba(255,255,255,0.55)'; }
-    else if (s.driveStatus === 'error') { driveIcon = '☁️⚠️'; driveText = 'Error de Drive'; driveBg = 'rgba(254,226,226,0.85)'; }
-    else if (s.driveStatus === 'no-auth') { driveIcon = '☁️'; driveText = 'No conectado'; driveBg = 'rgba(254,243,199,0.85)'; }
+    if (s.driveStatus === 'syncing') { driveIcon = '☁↑'; driveText = 'Subiendo…'; driveBg = 'rgba(59, 130, 246, 0.25)'; driveColor = '#93c5fd'; }
+    else if (s.driveStatus === 'synced') { driveIcon = '☁✓'; driveText = s.driveLastSync ? 'Drive ' + tiempoRelativo(s.driveLastSync) : 'Sincronizado'; driveBg = 'rgba(34, 197, 94, 0.18)'; driveColor = '#86efac'; }
+    else if (s.driveStatus === 'error') { driveIcon = '☁⚠'; driveText = 'Error Drive'; driveBg = 'rgba(220, 38, 38, 0.25)'; driveColor = '#fca5a5'; }
+    // 'idle' y 'no-auth' no se muestran (info redundante con DriveButton)
   }
 
-  return e('div', { 
-    className: 'noprint flex items-center gap-2', 
-    style: { fontSize: '12px', fontFamily: 'system-ui, sans-serif' }
-  },
+  return e('div', { className: 'noprint flex items-center gap-1.5' },
     e('div', {
-      style: {
-        background: bg,
-        color: color,
-        padding: '4px 10px',
-        borderRadius: '12px',
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '6px',
-        fontWeight: 500,
-        letterSpacing: '0.01em',
-        whiteSpace: 'nowrap'
-      },
+      style: { ...pillBase, background: bg, color: color },
       title: 'Estado del guardado en este navegador'
     }, e('span', null, icon), e('span', null, text)),
     driveIcon && e('div', {
-      style: {
-        background: driveBg,
-        color: color,
-        padding: '4px 10px',
-        borderRadius: '12px',
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '6px',
-        fontWeight: 500,
-        letterSpacing: '0.01em',
-        whiteSpace: 'nowrap'
-      },
+      style: { ...pillBase, background: driveBg, color: driveColor },
       title: 'Estado de Google Drive'
     }, e('span', null, driveIcon), e('span', null, driveText))
   );
@@ -7386,8 +7907,8 @@ function App() {
       color: 'rgba(28, 25, 23, 0.7)',
       letterSpacing: '0.02em'
     }
-  }, "Obra \xB7 Argentina \xB7 v1"))), /*#__PURE__*/React.createElement(DriveButton, null), /*#__PURE__*/React.createElement(SaveIndicator, null), /*#__PURE__*/React.createElement("nav", {
-    className: "max-w-7xl mx-auto px-5 flex gap-1 overflow-x-auto",
+  }, "Obra \xB7 Argentina \xB7 v1"))), /*#__PURE__*/React.createElement("nav", {
+    className: "max-w-7xl mx-auto px-5 flex gap-1 overflow-x-auto items-center",
     style: {
       backgroundColor: 'rgba(28, 25, 23, 0.85)',
       backdropFilter: 'blur(6px)',
@@ -7405,7 +7926,9 @@ function App() {
     className: `flex items-center gap-1.5 px-3 py-2 text-sm whitespace-nowrap border-b-2 ${view === k && !obraId ? 'border-amber-500 text-white' : 'border-transparent text-stone-400 hover:text-stone-200'}`
   }, /*#__PURE__*/React.createElement(Icon, {
     size: 15
-  }), lbl)))), /*#__PURE__*/React.createElement("main", {
+  }), lbl)), /*#__PURE__*/React.createElement("div", {
+    className: "ml-auto flex items-center gap-1.5 pl-3 shrink-0"
+  }, /*#__PURE__*/React.createElement(DriveButton, null), /*#__PURE__*/React.createElement(SaveIndicator, null)))), /*#__PURE__*/React.createElement("main", {
     className: "max-w-7xl mx-auto px-5 py-6"
   }, obraAbierta ? /*#__PURE__*/React.createElement(ObraView, {
     obra: obraAbierta,
