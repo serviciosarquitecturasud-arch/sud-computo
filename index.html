@@ -528,7 +528,8 @@ const _IC = {
   Tag: '<path d="M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><circle cx="7" cy="7" r="1.5"/>',
   Eye: '<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>',
   ChevronDown: '<path d="m6 9 6 6 6-6"/>',
-  ChevronRight: '<path d="m9 18 6-6-6-6"/>'
+  ChevronRight: '<path d="m9 18 6-6-6-6"/>',
+  Scale: '<path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/>'
 };
 function mkIcon(name) {
   return function Icon(props) {
@@ -577,7 +578,8 @@ const Building2 = mkIcon('Building2'),
   Tag = mkIcon('Tag'),
   Eye = mkIcon('Eye'),
   ChevronDown = mkIcon('ChevronDown'),
-  ChevronRight = mkIcon('ChevronRight');
+  ChevronRight = mkIcon('ChevronRight'),
+  Scale = mkIcon('Scale');
 
 /* === Grafico de lineas SVG propio (reemplaza recharts) === */
 function SvgLineChart({
@@ -8493,6 +8495,292 @@ function SaveIndicator() {
   );
 }
 
+function CompararObras({ obras, motor }) {
+  const [obraIdA, setObraIdA] = React.useState(() => obras[0] && obras[0].id || null);
+  const [obraIdB, setObraIdB] = React.useState(() => obras[1] && obras[1].id || obras[0] && obras[0].id || null);
+  const [verSoloDif, setVerSoloDif] = React.useState(false);
+  const [rubrosExpand, setRubrosExpand] = React.useState({});
+  const [mostrarAyuda, setMostrarAyuda] = React.useState(true);
+
+  if (!obras || !obras.length) {
+    return React.createElement('div', { className: 'p-6 text-stone-500' }, 'No hay obras cargadas para comparar.');
+  }
+
+  const obraA = obras.find(o => o.id === obraIdA);
+  const obraB = obras.find(o => o.id === obraIdB);
+
+  // ─── Cálculo por obra ────────────────────────────────────────
+  function detalleObra(obra) {
+    if (!obra) return { totalCD: 0, coefVal: 0, totalVenta: 0, rubros: {}, items: {} };
+    const coefVal = calcCoef(obra.coef || coefDefault());
+    const items = obra.items || [];
+    const rpDe = c => String(c).split('.')[0];
+    const rubros = {};
+    const itemsMap = {};
+    let totalCD = 0;
+    items.forEach(it => {
+      if (!it.cod) return;
+      const rp = rpDe(it.cod);
+      const cant = Number(it.cant) || 0;
+      const cu = motor.apuTiene(it.cod) ? motor.costoAPUEnObra(it.cod, obra) : (Number(it.precioManual) || 0);
+      const montoCD = cu * cant;
+      const monto = montoCD * coefVal;
+      totalCD += montoCD;
+      itemsMap[it.cod] = { cant, costoUnit: cu, montoCD, monto };
+      if (!rubros[rp]) rubros[rp] = { monto: 0, items: [] };
+      rubros[rp].monto += monto;
+      rubros[rp].items.push({ cod: it.cod, cant, costoUnit: cu, montoCD, monto });
+    });
+    return { totalCD, coefVal, totalVenta: totalCD * coefVal, rubros, items: itemsMap };
+  }
+
+  const detA = detalleObra(obraA);
+  const detB = detalleObra(obraB);
+  const todosRubros = [...new Set([...Object.keys(detA.rubros), ...Object.keys(detB.rubros)])].sort((a, b) => Number(a) - Number(b));
+
+  // ─── Helpers ─────────────────────────────────────────────────
+  function dif(a, b) {
+    const d = b - a;
+    const pct = a > 0 ? (d / a * 100) : (b > 0 ? Infinity : 0);
+    return { d, pct };
+  }
+  function colorDif(d, a, b) {
+    if (Math.abs(d) < 0.01) return '#a8a29e';      // sin cambio (gris suave)
+    if (a === 0 && b > 0) return '#2563eb';        // nuevo en B (azul)
+    if (b === 0 && a > 0) return '#a16207';        // sacado en B (ámbar)
+    return d > 0 ? '#dc2626' : '#16a34a';          // sube=rojo, baja=verde
+  }
+  function fmtDifCompacto(d) {
+    if (Math.abs(d) < 0.01) return '—';
+    const abs = Math.abs(d);
+    if (abs >= 1e6) return (d > 0 ? '+$' : '−$') + (abs / 1e6).toFixed(2) + 'M';
+    if (abs >= 1e3) return (d > 0 ? '+$' : '−$') + (abs / 1e3).toFixed(1) + 'K';
+    return (d > 0 ? '+$' : '−$') + abs.toFixed(0);
+  }
+  function moneyCompacto(n) {
+    const abs = Math.abs(n);
+    if (abs >= 1e6) return '$' + (n / 1e6).toFixed(2) + 'M';
+    if (abs >= 1e3) return '$' + (n / 1e3).toFixed(1) + 'K';
+    return '$' + n.toFixed(0);
+  }
+  function etiquetaDif(d, a, b) {
+    if (Math.abs(d) < 0.01) return '—';
+    if (a === 0 && b > 0) return 'nuevo';
+    if (b === 0 && a > 0) return 'sacado';
+    if (!isFinite(d) || a === 0) return 'nuevo';
+    const pct = (d / a * 100);
+    const signo = pct > 0 ? '+' : '−';
+    return signo + Math.abs(pct).toFixed(1) + '%';
+  }
+  function totalItemsObra(d) {
+    return Object.keys(d.items).length;
+  }
+
+  // ─── Estilos compactos reutilizables ─────────────────────────
+  const filaRubro = 'flex items-center px-3 py-2 border-b border-stone-200 bg-white hover:bg-stone-50 cursor-pointer text-sm';
+  const filaItem = 'flex items-center px-3 py-1 border-b border-stone-100 bg-stone-50 text-xs';
+
+  // ─── Render ──────────────────────────────────────────────────
+  return React.createElement('div', { className: 'p-4 max-w-6xl mx-auto' },
+
+    // ═══ Header ═══
+    React.createElement('h2', { className: 'text-lg font-semibold text-stone-800 flex items-center gap-2 mb-1' },
+      React.createElement(Scale, { size: 20 }),
+      'Comparar dos obras'
+    ),
+    React.createElement('p', { className: 'text-xs text-stone-500 mb-4' },
+      'Comparación lado a lado de dos versiones de la misma obra (ej: completa vs ajustada).'
+    ),
+
+    // ═══ Cómo leer (colapsable) ═══
+    React.createElement('div', { className: 'mb-4 bg-amber-50 border border-amber-200 rounded' },
+      React.createElement('div', {
+        className: 'flex items-center justify-between px-3 py-2 cursor-pointer',
+        onClick: () => setMostrarAyuda(!mostrarAyuda)
+      },
+        React.createElement('div', { className: 'flex items-center gap-2 text-sm font-semibold text-amber-900' },
+          React.createElement(mostrarAyuda ? ChevronDown : ChevronRight, { size: 14 }),
+          '¿Cómo leer esta tabla?'
+        )
+      ),
+      mostrarAyuda && React.createElement('div', { className: 'px-3 pb-3 text-xs space-y-1.5 leading-relaxed' },
+        React.createElement('div', { className: 'text-stone-700' },
+          React.createElement('b', null, 'Obra A'), ' = versión base. ',
+          React.createElement('b', null, 'Obra B'), ' = versión a comparar (típicamente la ajustada).'
+        ),
+        React.createElement('div', { className: 'flex items-center gap-2 flex-wrap' },
+          React.createElement('span', { className: 'inline-block w-2.5 h-2.5 rounded-full flex-shrink-0', style: { background: '#dc2626' } }),
+          React.createElement('span', { style: { color: '#dc2626' } }, React.createElement('b', null, 'Rojo'), ': B es más caro (el item subió)'),
+          React.createElement('span', { className: 'mx-1 text-stone-300' }, '·'),
+          React.createElement('span', { className: 'inline-block w-2.5 h-2.5 rounded-full flex-shrink-0', style: { background: '#16a34a' } }),
+          React.createElement('span', { style: { color: '#16a34a' } }, React.createElement('b', null, 'Verde'), ': B es más barato (el item bajó)')
+        ),
+        React.createElement('div', { className: 'flex items-center gap-2 flex-wrap' },
+          React.createElement('span', { className: 'inline-block w-2.5 h-2.5 rounded-full flex-shrink-0', style: { background: '#2563eb' } }),
+          React.createElement('span', { style: { color: '#2563eb' } }, React.createElement('b', null, '"nuevo"'), ': item presente solo en B (recién agregado)'),
+          React.createElement('span', { className: 'mx-1 text-stone-300' }, '·'),
+          React.createElement('span', { className: 'inline-block w-2.5 h-2.5 rounded-full flex-shrink-0', style: { background: '#a16207' } }),
+          React.createElement('span', { style: { color: '#a16207' } }, React.createElement('b', null, '"sacado"'), ': item presente solo en A (eliminado en B)')
+        ),
+        React.createElement('div', { className: 'flex items-center gap-2 flex-wrap' },
+          React.createElement('span', { className: 'inline-block w-2.5 h-2.5 rounded-full flex-shrink-0', style: { background: '#a8a29e' } }),
+          React.createElement('span', { style: { color: '#78716c' } }, React.createElement('b', null, 'Gris / "—"'), ': sin cambio entre A y B')
+        ),
+        React.createElement('div', { className: 'text-stone-700 pt-1 border-t border-amber-200' },
+          React.createElement('b', null, 'Δ $'), ' es la diferencia de monto entre B y A (negativa = B cuesta menos). ',
+          React.createElement('b', null, 'Δ %'), ' es lo mismo en porcentaje.'
+        ),
+        React.createElement('div', { className: 'text-stone-500 italic' }, '→ Click sobre cualquier rubro para desplegar los items.')
+      )
+    ),
+
+    // ═══ Selectores ═══
+    React.createElement('div', { className: 'grid grid-cols-2 gap-3 mb-3' },
+      React.createElement('div', null,
+        React.createElement('label', { className: 'text-xs text-stone-500 uppercase tracking-wider mb-1 block' }, 'Obra A — base'),
+        React.createElement('select', {
+          value: obraIdA || '',
+          onChange: e => setObraIdA(e.target.value),
+          className: 'w-full border border-stone-300 rounded px-2 py-1.5 text-sm bg-white'
+        },
+          React.createElement('option', { value: '' }, '— elegir —'),
+          obras.map(o => React.createElement('option', { key: o.id, value: o.id }, o.nombre))
+        )
+      ),
+      React.createElement('div', null,
+        React.createElement('label', { className: 'text-xs text-stone-500 uppercase tracking-wider mb-1 block' }, 'Obra B — comparada'),
+        React.createElement('select', {
+          value: obraIdB || '',
+          onChange: e => setObraIdB(e.target.value),
+          className: 'w-full border border-stone-300 rounded px-2 py-1.5 text-sm bg-white'
+        },
+          React.createElement('option', { value: '' }, '— elegir —'),
+          obras.map(o => React.createElement('option', { key: o.id, value: o.id }, o.nombre))
+        )
+      )
+    ),
+
+    // ═══ Sin obras seleccionadas ═══
+    (!obraA || !obraB) && React.createElement('div', { className: 'p-6 text-center text-stone-500 bg-stone-50 border border-stone-300 rounded mt-4' },
+      'Elegí dos obras para ver la comparación.'
+    ),
+
+    // ═══ Resumen económico compacto (una sola card destacada) ═══
+    obraA && obraB && (() => {
+      const dVenta = dif(detA.totalVenta, detB.totalVenta);
+      const dCD = dif(detA.totalCD, detB.totalCD);
+      return React.createElement('div', { className: 'border border-stone-300 rounded p-3 mb-3 bg-gradient-to-r from-stone-50 to-amber-50' },
+        React.createElement('div', { className: 'text-xs text-stone-500 uppercase tracking-wider mb-2' }, 'Precio total de venta'),
+        React.createElement('div', { className: 'flex items-baseline gap-2 flex-wrap' },
+          React.createElement('span', { className: 'text-stone-700 font-mono text-sm' }, money(detA.totalVenta)),
+          React.createElement('span', { className: 'text-stone-400' }, '→'),
+          React.createElement('span', { className: 'text-stone-900 font-mono text-base font-semibold' }, money(detB.totalVenta)),
+          React.createElement('span', {
+            className: 'ml-2 px-2 py-0.5 rounded text-sm font-bold',
+            style: { color: colorDif(dVenta.d, detA.totalVenta, detB.totalVenta), background: '#fff', border: '1px solid currentColor' }
+          }, fmtDifCompacto(dVenta.d), ' (', etiquetaDif(dVenta.d, detA.totalVenta, detB.totalVenta), ')')
+        ),
+        React.createElement('div', { className: 'mt-2 flex gap-4 text-xs text-stone-500' },
+          React.createElement('span', null, 'Costo directo A: ', React.createElement('span', { className: 'font-mono text-stone-700' }, money(detA.totalCD))),
+          React.createElement('span', null, 'Coef A: ', React.createElement('span', { className: 'font-mono text-stone-700' }, detA.coefVal.toFixed(3))),
+          React.createElement('span', { className: 'text-stone-300' }, '|'),
+          React.createElement('span', null, 'Costo directo B: ', React.createElement('span', { className: 'font-mono text-stone-700' }, money(detB.totalCD))),
+          React.createElement('span', null, 'Coef B: ', React.createElement('span', { className: 'font-mono text-stone-700' }, detB.coefVal.toFixed(3)))
+        )
+      );
+    })(),
+
+    // ═══ Toggle + contador ═══
+    obraA && obraB && React.createElement('div', { className: 'flex items-center justify-between mb-2 px-1' },
+      React.createElement('div', { className: 'text-xs text-stone-500' },
+        todosRubros.length, ' rubros · ',
+        totalItemsObra(detA), ' items en A · ',
+        totalItemsObra(detB), ' items en B'
+      ),
+      React.createElement('label', { className: 'flex items-center gap-2 cursor-pointer text-xs text-stone-700' },
+        React.createElement('input', { type: 'checkbox', checked: verSoloDif, onChange: e => setVerSoloDif(e.target.checked) }),
+        'Solo mostrar los que difieren'
+      )
+    ),
+
+    // ═══ Tabla compacta ═══
+    obraA && obraB && React.createElement('div', { className: 'border border-stone-300 rounded overflow-hidden' },
+      // Header tabla
+      React.createElement('div', { className: 'flex items-center px-3 py-1.5 bg-stone-100 border-b border-stone-300 text-xs uppercase tracking-wider text-stone-600 font-semibold' },
+        React.createElement('div', { style: { flex: '1 1 0', minWidth: 0 } }, 'Rubro / item'),
+        React.createElement('div', { className: 'text-right font-mono', style: { width: '110px' } }, 'A'),
+        React.createElement('div', { className: 'text-stone-300 text-center', style: { width: '20px' } }, '→'),
+        React.createElement('div', { className: 'text-right font-mono', style: { width: '110px' } }, 'B'),
+        React.createElement('div', { className: 'text-right font-mono', style: { width: '90px' } }, 'Δ $'),
+        React.createElement('div', { className: 'text-right font-mono', style: { width: '80px' } }, 'Δ %')
+      ),
+      // Filas
+      todosRubros.map(rp => {
+        const rA = detA.rubros[rp] || { monto: 0, items: [] };
+        const rB = detB.rubros[rp] || { monto: 0, items: [] };
+        const d = dif(rA.monto, rB.monto);
+        if (verSoloDif && Math.abs(d.d) < 0.01) return null;
+        const rub = motor.rubMap[rp + '.00'] || {};
+        const nombre = rub.desc || ('Rubro ' + rp);
+        const expanded = !!rubrosExpand[rp];
+        const itemCodes = [...new Set([...rA.items.map(i => i.cod), ...rB.items.map(i => i.cod)])].sort(cmpCodigo);
+        const color = colorDif(d.d, rA.monto, rB.monto);
+
+        return React.createElement(React.Fragment, { key: rp },
+          // Fila rubro
+          React.createElement('div', {
+            className: filaRubro,
+            onClick: () => setRubrosExpand(s => Object.assign({}, s, { [rp]: !s[rp] }))
+          },
+            React.createElement('div', { className: 'flex items-center gap-1.5 font-semibold text-stone-800', style: { flex: '1 1 0', minWidth: 0 } },
+              React.createElement(expanded ? ChevronDown : ChevronRight, { size: 12 }),
+              React.createElement('span', { className: 'font-mono text-xs text-stone-500' }, rp + '.00'),
+              React.createElement('span', { className: 'truncate' }, nombre)
+            ),
+            React.createElement('div', { className: 'text-right font-mono text-stone-600 text-xs', style: { width: '110px' } }, moneyCompacto(rA.monto)),
+            React.createElement('div', { className: 'text-stone-300 text-center text-xs', style: { width: '20px' } }, '→'),
+            React.createElement('div', { className: 'text-right font-mono text-stone-700 text-xs', style: { width: '110px' } }, moneyCompacto(rB.monto)),
+            React.createElement('div', { className: 'text-right font-mono font-semibold text-xs', style: { width: '90px', color } }, fmtDifCompacto(d.d)),
+            React.createElement('div', { className: 'text-right font-mono font-semibold text-xs', style: { width: '80px', color } }, etiquetaDif(d.d, rA.monto, rB.monto))
+          ),
+          // Items expandidos
+          expanded && itemCodes.map(cod => {
+            const iA = detA.items[cod] || { cant: 0, monto: 0 };
+            const iB = detB.items[cod] || { cant: 0, monto: 0 };
+            const di = dif(iA.monto, iB.monto);
+            if (verSoloDif && Math.abs(di.d) < 0.01) return null;
+            const rubItem = motor.rubMap[cod] || {};
+            const itemDesc = rubItem.desc || cod;
+            const colorIt = colorDif(di.d, iA.monto, iB.monto);
+
+            return React.createElement('div', { key: cod, className: filaItem },
+              React.createElement('div', { className: 'flex items-center gap-1.5 pl-5', style: { flex: '1 1 0', minWidth: 0 } },
+                React.createElement('span', { className: 'font-mono text-stone-400', style: { fontSize: '10px' } }, cod),
+                React.createElement('span', { className: 'text-stone-600 truncate' }, itemDesc)
+              ),
+              React.createElement('div', { className: 'text-right font-mono text-stone-500', style: { width: '110px', fontSize: '10px' } }, iA.monto > 0 ? moneyCompacto(iA.monto) : '—'),
+              React.createElement('div', { className: 'text-stone-300 text-center', style: { width: '20px', fontSize: '10px' } }, '→'),
+              React.createElement('div', { className: 'text-right font-mono text-stone-600', style: { width: '110px', fontSize: '10px' } }, iB.monto > 0 ? moneyCompacto(iB.monto) : '—'),
+              React.createElement('div', { className: 'text-right font-mono font-semibold', style: { width: '90px', fontSize: '10px', color: colorIt } }, fmtDifCompacto(di.d)),
+              React.createElement('div', { className: 'text-right font-mono font-semibold', style: { width: '80px', fontSize: '10px', color: colorIt } }, etiquetaDif(di.d, iA.monto, iB.monto))
+            );
+          })
+        );
+      }).filter(Boolean)
+    ),
+
+    // ═══ Leyenda compacta abajo (resumen visual de colores) ═══
+    obraA && obraB && React.createElement('div', { className: 'flex items-center gap-3 mt-2 text-xs text-stone-500 flex-wrap' },
+      React.createElement('span', { className: 'text-stone-400 uppercase tracking-wider text-[10px] font-semibold' }, 'Colores:'),
+      React.createElement('span', { className: 'flex items-center gap-1' }, React.createElement('span', { className: 'inline-block w-2 h-2 rounded-full', style: { background: '#dc2626' } }), 'B más caro'),
+      React.createElement('span', { className: 'flex items-center gap-1' }, React.createElement('span', { className: 'inline-block w-2 h-2 rounded-full', style: { background: '#16a34a' } }), 'B más barato'),
+      React.createElement('span', { className: 'flex items-center gap-1' }, React.createElement('span', { className: 'inline-block w-2 h-2 rounded-full', style: { background: '#2563eb' } }), 'nuevo en B'),
+      React.createElement('span', { className: 'flex items-center gap-1' }, React.createElement('span', { className: 'inline-block w-2 h-2 rounded-full', style: { background: '#a16207' } }), 'sacado en B'),
+      React.createElement('span', { className: 'flex items-center gap-1' }, React.createElement('span', { className: 'inline-block w-2 h-2 rounded-full', style: { background: '#a8a29e' } }), 'sin cambio')
+    )
+  );
+}
+
 function App() {
   const [cat, setCat] = useState(null);
   const [obras, setObras] = useState([]);
@@ -8611,7 +8899,7 @@ function App() {
   }
   const obraAbierta = obras.find(o => o.id === obraId);
   const setObra = o => setObras(obras.map(x => x.id === o.id ? o : x));
-  const nav = [['obras', 'Obras', Building2], ['materiales', 'Materiales', Package], ['manoObra', 'Mano de obra', HardHat], ['equipos', 'Equipos', Wrench], ['rubros', 'Rubros', ListTree], ['apus', 'APUs', Layers], ['revit', 'Revit', Upload], ['respaldo', 'Respaldo', Download], ['imprimir', 'Imprimir', Printer]];
+  const nav = [['obras', 'Obras', Building2], ['comparar', 'Comparar', Scale], ['materiales', 'Materiales', Package], ['manoObra', 'Mano de obra', HardHat], ['equipos', 'Equipos', Wrench], ['rubros', 'Rubros', ListTree], ['apus', 'APUs', Layers], ['revit', 'Revit', Upload], ['respaldo', 'Respaldo', Download], ['imprimir', 'Imprimir', Printer]];
   return /*#__PURE__*/React.createElement("div", {
     className: "min-h-screen bg-stone-100 text-stone-800"
   }, /*#__PURE__*/React.createElement("header", {
@@ -8679,6 +8967,9 @@ function App() {
     setObras: setObras,
     motor: motor,
     onOpen: setObraId
+  }), view === 'comparar' && /*#__PURE__*/React.createElement(CompararObras, {
+    obras: obras,
+    motor: motor
   }), view === 'materiales' && /*#__PURE__*/React.createElement(Materiales, {
     cat: cat,
     setCat: setCat
