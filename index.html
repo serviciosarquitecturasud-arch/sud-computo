@@ -6822,7 +6822,7 @@ function Precios({ obra, setObra, cat }) {
     const proveedorMap = oProv.materiales || {};
 
     // Renderiza una tabla con agrupación por División
-    const renderTabla = (lista) => {
+    const renderTabla = (lista, enUsoMode) => {
       const grupos = {};
       lista.forEach(m => {
         const div = (m.div || 'Sin división').trim() || 'Sin división';
@@ -6831,7 +6831,8 @@ function Precios({ obra, setObra, cat }) {
       });
       Object.keys(grupos).forEach(d => grupos[d].sort((x, y) => cmpCodigo(x.cod, y.cod)));
       const divsOrdenadas = Object.keys(grupos).sort((a, b) => { const codA = (grupos[a][0] && grupos[a][0].cod) || ''; const codB = (grupos[b][0] && grupos[b][0].cod) || ''; return cmpCodigo(codA, codB); });
-      return e('div', { className: 'overflow-x-auto' },
+      const divisionRowClass = enUsoMode ? 'bg-amber-600 text-white' : 'bg-stone-800 text-white';
+      return e('div', { className: 'overflow-x-auto' + (enUsoMode ? ' border-l-4 border-amber-500 bg-amber-50/30' : '') },
         e('table', { className: 'w-full text-sm' },
           e('thead', null, e('tr', null,
             e('th', { className: th }, 'Ítem'),
@@ -6842,7 +6843,7 @@ function Precios({ obra, setObra, cat }) {
             e('th', { className: th + ' w-48' }, 'Proveedor')
           )),
           e('tbody', null, divsOrdenadas.map(divNombre => e(React.Fragment, { key: 'div-' + divNombre },
-            e('tr', { className: 'bg-stone-800 text-white' },
+            e('tr', { className: divisionRowClass },
               e('td', { className: td + ' font-semibold uppercase tracking-wide text-xs', colSpan: 6 }, divNombre)
             ),
             grupos[divNombre].map(m => {
@@ -6892,12 +6893,16 @@ function Precios({ obra, setObra, cat }) {
         'Esta obra todavía no tiene ítems con cómputo. Cargá cantidades en la planilla para que aparezcan los materiales en uso acá arriba.'
       ),
       hayItemsComputados && totalEnUsoSinFiltro > 0 && seccionHeader('EN USO en esta obra', 'amber', enUso.length, totalEnUsoSinFiltro),
-      hayItemsComputados && enUso.length > 0 && renderTabla(enUso),
+      hayItemsComputados && enUso.length > 0 && renderTabla(enUso, true),
       hayItemsComputados && totalEnUsoSinFiltro > 0 && enUso.length === 0 && e('div', { className: 'text-xs text-stone-400 italic p-2' },
         'Ningún material en uso coincide con la búsqueda.'
       ),
-      seccionHeader('Listado completo del catálogo', 'gris', otros.length, totalOtrosSinFiltro),
-      otros.length > 0 ? renderTabla(otros) : e('div', { className: 'text-sm text-stone-400 italic p-4 text-center' }, 'Ningún material coincide con la búsqueda.')
+      e('div', { className: 'mt-6 mb-1 bg-stone-900 text-white px-4 py-3 rounded flex items-center gap-3' },
+        e('span', { className: 'font-bold uppercase tracking-wider text-sm' }, 'Listado completo del catálogo'),
+        e('span', { className: 'text-stone-400' }, '·'),
+        e('span', { className: 'text-xs text-stone-300' }, otros.length + ' de ' + totalOtrosSinFiltro + (otros.length !== totalOtrosSinFiltro ? ' (filtrados)' : ''))
+      ),
+      otros.length > 0 ? renderTabla(otros, false) : e('div', { className: 'text-sm text-stone-400 italic p-4 text-center' }, 'Ningún material coincide con la búsqueda.')
     );
   };
 
