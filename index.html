@@ -525,7 +525,10 @@ const _IC = {
   CalendarRange: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M17 14h-6M13 18H7M7 14h.01M17 18h.01"/>',
   TrendingUp: '<path d="M22 7 13.5 15.5 8.5 10.5 2 17"/><path d="M16 7h6v6"/>',
   GitBranch: '<path d="M6 3v12"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/>',
-  Tag: '<path d="M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><circle cx="7" cy="7" r="1.5"/>'
+  Tag: '<path d="M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><circle cx="7" cy="7" r="1.5"/>',
+  Eye: '<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>',
+  ChevronDown: '<path d="m6 9 6 6 6-6"/>',
+  ChevronRight: '<path d="m9 18 6-6-6-6"/>'
 };
 function mkIcon(name) {
   return function Icon(props) {
@@ -571,7 +574,10 @@ const Building2 = mkIcon('Building2'),
   CalendarRange = mkIcon('CalendarRange'),
   TrendingUp = mkIcon('TrendingUp'),
   GitBranch = mkIcon('GitBranch'),
-  Tag = mkIcon('Tag');
+  Tag = mkIcon('Tag'),
+  Eye = mkIcon('Eye'),
+  ChevronDown = mkIcon('ChevronDown'),
+  ChevronRight = mkIcon('ChevronRight');
 
 /* === Grafico de lineas SVG propio (reemplaza recharts) === */
 function SvgLineChart({
@@ -2393,212 +2399,71 @@ function Equipos({
 /* ============================ CATÁLOGO: RUBROS ============================ */
 function Rubros({
   cat,
-  setCat,
-  obras,
-  setObras
+  setCat
 }) {
-  const e = React.createElement;
   const [q, setQ] = useState('');
   const list = useMemo(() => cat.rubros.filter(r => !q || (r.cod + ' ' + r.desc + ' ' + r.rubro).toLowerCase().includes(q.toLowerCase())).sort((a, b) => cmpCodigo(a.cod, b.cod)), [cat.rubros, q]);
-
   const add = () => {
     const cod = prompt('C\xF3digo del nuevo rubro / sub\xEDtem (ej "1.10" o "4.02.08"):');
-    if (cod === null) return; // Cancel
-    const codCleaned = (cod || '').trim();
-    if (!codCleaned) { alert('El c\xF3digo no puede estar vac\xEDo.'); return; }
-    if (cat.rubros.some(r => r.cod === codCleaned)) { alert('Ya existe ese c\xF3digo.'); return; }
-
-    const desc = prompt('Descripci\xF3n del rubro "' + codCleaned + '":');
-    if (desc === null) return; // Cancel → no crea nada
-    const descCleaned = (desc || '').trim();
-    if (!descCleaned) { alert('La descripci\xF3n no puede estar vac\xEDa.'); return; }
-
-    const unidad = prompt('Unidad (m\xB2, m\xB3, ml, U, kg, Gl, ...). Dej\xE1 vac\xEDo si es rubro padre .00:');
-    if (unidad === null) return; // Cancel → no crea nada
-    const unidadCleaned = (unidad || '').trim();
-
-    const padre = codCleaned.split('.')[0] + '.00';
+    if (!cod) return;
+    if (cat.rubros.some(r => r.cod === cod)) { alert('Ya existe ese c\xF3digo.'); return; }
+    const desc = prompt('Descripci\xF3n:') || '';
+    const unidad = prompt('Unidad (m\xB2, m\xB3, ml, U, kg, Gl, ...):') || '';
+    const padre = cod.split('.')[0] + '.00';
     const padreObj = cat.rubros.find(r => r.cod === padre);
     const rubroPadre = padreObj ? padreObj.desc : '';
-    setCat(c => ({ ...c, rubros: [...c.rubros, { cod: codCleaned, rubro: rubroPadre, subrubro: '', desc: descCleaned, unidad: unidadCleaned }] }));
+    setCat(c => ({ ...c, rubros: [...c.rubros, { cod, rubro: rubroPadre, subrubro: '', desc, unidad }] }));
   };
-
-  // Actualiza UN campo del rubro (edición inline)
-  // Si se edita la descripción de un rubro padre (X.00), propaga el cambio al campo "rubro" de todos sus hijos.
-  const updateRubro = (cod, patch) => {
-    setCat(c => {
-      const next = c.rubros.map(r => r.cod === cod ? { ...r, ...patch } : r);
-      // Si cambió la descripción de un padre X.00, propagar a hijos
-      if (cod.endsWith('.00') && 'desc' in patch) {
-        const padrePrefix = cod.split('.')[0] + '.';
-        const nuevoNombre = patch.desc;
-        return {
-          ...c,
-          rubros: next.map(r =>
-            (r.cod !== cod && r.cod.startsWith(padrePrefix) && !r.cod.endsWith('.00'))
-              ? { ...r, rubro: nuevoNombre }
-              : r
-          )
-        };
-      }
-      return { ...c, rubros: next };
-    });
-  };
-
-  // Elimina un rubro con todas las validaciones de seguridad
-  const deleteRubro = (cod) => {
-    // 1. Verificar uso en obras
-    const enUso = []; // {obraNombre, cant}
-    (obras || []).forEach(o => {
-      (o.items || []).forEach(it => {
-        if (it.cod === cod) {
-          enUso.push({ obraNombre: o.nombre || 'sin nombre', cant: Number(it.cant) || 0 });
-        }
-      });
-    });
-    const conCantidad = enUso.filter(u => u.cant > 0);
-    const conCero = enUso.filter(u => u.cant === 0);
-
-    if (conCantidad.length > 0) {
-      alert(
-        'No se puede eliminar "' + cod + '".\n\n' +
-        'Est\xE1 cargado con cantidad > 0 en ' + conCantidad.length + ' obra(s):\n' +
-        conCantidad.map(u => '  \u2022 ' + u.obraNombre + ' (cant=' + u.cant + ')').join('\n') +
-        '\n\nPon\xE9 las cantidades en 0 o elimin\xE1 los \xEDtems en esas obras antes de borrar el rubro del cat\xE1logo.'
-      );
-      return;
-    }
-
-    // 2. Si es un rubro padre (.00), verificar que no tenga hijos
-    if (cod.endsWith('.00')) {
-      const padrePrefix = cod.split('.')[0] + '.';
-      const hijos = cat.rubros.filter(r => r.cod !== cod && r.cod.startsWith(padrePrefix));
-      if (hijos.length > 0) {
-        alert(
-          'No se puede eliminar "' + cod + '".\n\n' +
-          'Es un rubro padre con ' + hijos.length + ' sub\xEDtem(s):\n' +
-          hijos.slice(0, 8).map(h => '  \u2022 ' + h.cod + ' ' + h.desc).join('\n') +
-          (hijos.length > 8 ? '\n  \u2026 y ' + (hijos.length - 8) + ' m\xE1s' : '') +
-          '\n\nElimin\xE1 primero todos los sub\xEDtems.'
-        );
-        return;
-      }
-    }
-
-    // 3. Verificar APU asociado
-    const insumosAPU = cat.biblioteca.filter(b => b.apu === cod).length;
-    const yaEliminadoEnPapelera = Array.isArray(cat.deletedApus) && cat.deletedApus.includes(cod);
-
-    // 4. Confirmar
-    const lineas = ['Eliminar rubro "' + cod + '"?', ''];
-    if (conCero.length > 0) {
-      lineas.push('\u2022 Se quitar\xE1 de ' + conCero.length + ' obra(s) donde est\xE1 con cant=0');
-    }
-    if (insumosAPU > 0) {
-      lineas.push('\u2022 Se eliminar\xE1 el APU asociado (' + insumosAPU + ' insumo' + (insumosAPU === 1 ? '' : 's') + ' cargados)');
-    }
-    if (yaEliminadoEnPapelera) {
-      lineas.push('\u2022 Se sacar\xE1 de la papelera de APUs eliminados');
-    }
-    lineas.push('');
-    lineas.push('Esta acci\xF3n no se puede deshacer.');
-    if (!confirm(lineas.join('\n'))) return;
-
-    // 5. Eliminar del catálogo (rubros + biblioteca + deletedApus)
-    setCat(c => ({
-      ...c,
-      rubros: c.rubros.filter(r => r.cod !== cod),
-      biblioteca: c.biblioteca.filter(b => b.apu !== cod),
-      deletedApus: Array.isArray(c.deletedApus) ? c.deletedApus.filter(x => x !== cod) : []
-    }));
-
-    // 6. Limpiar items vacíos en obras
-    if (conCero.length > 0) {
-      setObras(prev => prev.map(o => ({
-        ...o,
-        items: (o.items || []).filter(it => it.cod !== cod)
-      })));
-    }
-  };
-
-  return e('div', null,
-    e(SectionTitle, { sub: cat.rubros.length + ' l\xEDneas \xB7 estructura maestra de rubros e \xEDtems. Edit\xE1 cualquier celda haciendo click.' }, 'Rubros'),
-    e('div', { className: 'mb-3 flex items-center gap-3' },
-      e('div', { className: 'relative' },
-        e(Search, { size: 15, className: 'absolute left-2 top-2.5 text-stone-400' }),
-        e('input', {
-          value: q,
-          onChange: ev => setQ(ev.target.value),
-          placeholder: 'Buscar rubro o \xEDtem',
-          className: 'pl-8 pr-3 py-2 text-sm border border-stone-300 rounded w-72 outline-none focus:border-amber-600'
-        })
-      ),
-      e('div', { className: 'ml-auto' },
-        e(Btn, { onClick: add, sm: true }, e(Plus, { size: 14 }), 'Rubro / \xEDtem')
-      )
-    ),
-    e('div', { className: 'bg-white border border-stone-300 rounded overflow-x-auto' },
-      e('table', { className: 'w-full text-sm' },
-        e('thead', null, e('tr', null,
-          e('th', { className: th + ' w-24' }, 'C\xF3digo'),
-          e('th', { className: th + ' w-48' }, 'Rubro'),
-          e('th', { className: th + ' w-48' }, 'Subrubro'),
-          e('th', { className: th }, 'Descripci\xF3n'),
-          e('th', { className: th + ' w-20' }, 'Unidad'),
-          e('th', { className: th + ' w-10' }, '')
-        )),
-        e('tbody', null, list.map((r) => {
-          const esRubro = r.cod.endsWith('.00');
-          return e('tr', {
-            key: r.cod,
-            className: esRubro ? 'bg-stone-800 text-white' : 'hover:bg-stone-50'
-          },
-            // Código (no editable: es identificador)
-            e('td', { className: td + (esRubro ? ' font-mono text-xs font-semibold' : ' font-mono text-xs text-stone-600 pl-4') }, r.cod),
-            // Rubro padre (en filas .00: la descripción del propio rubro = se edita en col Descripción; en filas hijas: el nombre del padre, NO editable porque viene heredado)
-            e('td', { className: td + (esRubro ? ' font-semibold uppercase tracking-wide text-xs' : ' text-xs text-stone-500') },
-              esRubro ? r.desc : r.rubro
-            ),
-            // Subrubro (editable solo en filas hijas)
-            e('td', { className: td + ' text-xs ' + (esRubro ? '' : 'text-stone-500') },
-              esRubro ? '' : e(EditCell, {
-                value: r.subrubro || '',
-                placeholder: '\u2014',
-                onCommit: v => updateRubro(r.cod, { subrubro: (v || '').trim() })
-              })
-            ),
-            // Descripción (editable en ambos casos)
-            e('td', { className: td },
-              e(EditCell, {
-                value: r.desc || '',
-                onCommit: v => {
-                  const nuevoDesc = (v || '').trim();
-                  if (nuevoDesc === '') { alert('La descripci\xF3n no puede quedar vac\xEDa.'); return; }
-                  updateRubro(r.cod, { desc: nuevoDesc });
-                }
-              })
-            ),
-            // Unidad (editable solo en filas hijas)
-            e('td', { className: td + (esRubro ? '' : ' text-stone-500') },
-              esRubro ? '' : e(EditCell, {
-                value: r.unidad || '',
-                placeholder: '\u2014',
-                onCommit: v => updateRubro(r.cod, { unidad: (v || '').trim() })
-              })
-            ),
-            // Botón eliminar
-            e('td', { className: td + ' text-center' },
-              e('button', {
-                onClick: () => deleteRubro(r.cod),
-                className: (esRubro ? 'text-stone-400 hover:text-red-300' : 'text-stone-300 hover:text-red-600'),
-                title: 'Eliminar rubro'
-              }, e(Trash2, { size: 14 }))
-            )
-          );
-        }))
-      )
-    )
-  );
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(SectionTitle, {
+    sub: `${cat.rubros.length} líneas · estructura maestra de rubros e ítems.`
+  }, "Rubros"), /*#__PURE__*/React.createElement("div", {
+    className: "mb-3 flex items-center gap-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "relative"
+  }, /*#__PURE__*/React.createElement(Search, {
+    size: 15,
+    className: "absolute left-2 top-2.5 text-stone-400"
+  }), /*#__PURE__*/React.createElement("input", {
+    value: q,
+    onChange: e => setQ(e.target.value),
+    placeholder: "Buscar rubro o \xEDtem",
+    className: "pl-8 pr-3 py-2 text-sm border border-stone-300 rounded w-72 outline-none focus:border-amber-600"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "ml-auto"
+  }, /*#__PURE__*/React.createElement(Btn, {
+    onClick: add,
+    sm: true
+  }, /*#__PURE__*/React.createElement(Plus, { size: 14 }), "Rubro / \xEDtem"))), /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-stone-300 rounded overflow-x-auto"
+  }, /*#__PURE__*/React.createElement("table", {
+    className: "w-full text-sm"
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", {
+    className: th + ' w-24'
+  }, "C\xF3digo"), /*#__PURE__*/React.createElement("th", {
+    className: th + ' w-48'
+  }, "Rubro"), /*#__PURE__*/React.createElement("th", {
+    className: th + ' w-48'
+  }, "Subrubro"), /*#__PURE__*/React.createElement("th", {
+    className: th
+  }, "Descripci\xF3n"), /*#__PURE__*/React.createElement("th", {
+    className: th + ' w-16'
+  }, "Unidad"))), /*#__PURE__*/React.createElement("tbody", null, list.map((r, i) => {
+    const esRubro = r.cod.endsWith('.00');
+    return /*#__PURE__*/React.createElement("tr", {
+      key: i,
+      className: esRubro ? 'bg-stone-800 text-white' : 'hover:bg-stone-50'
+    }, /*#__PURE__*/React.createElement("td", {
+      className: td + (esRubro ? ' font-mono text-xs font-semibold' : ' font-mono text-xs text-stone-600 pl-4')
+    }, r.cod), /*#__PURE__*/React.createElement("td", {
+      className: td + (esRubro ? ' font-semibold uppercase tracking-wide text-xs' : ' text-xs text-stone-500')
+    }, esRubro ? r.desc : r.rubro), /*#__PURE__*/React.createElement("td", {
+      className: td + ' text-xs ' + (esRubro ? '' : 'text-stone-500')
+    }, esRubro ? '' : r.subrubro), /*#__PURE__*/React.createElement("td", {
+      className: td
+    }, esRubro ? '' : r.desc), /*#__PURE__*/React.createElement("td", {
+      className: td + (esRubro ? '' : ' text-stone-500')
+    }, r.unidad));
+  })))));
 }
 
 /* ============================ CATÁLOGO: APUs ============================ */
@@ -2630,41 +2495,34 @@ function APUs({
   const rub = motor.rubMap[sel];
   const addApu = () => {
     const cod = prompt('C\xF3digo del nuevo APU (debe coincidir con un rubro existente o crear uno nuevo, ej "1.10", "4.02.08"):');
-    if (cod === null) return; // Cancel
-    const codCleaned = (cod || '').trim();
-    if (!codCleaned) { alert('El c\xF3digo no puede estar vac\xEDo.'); return; }
-    if (apuCods.includes(codCleaned)) {
+    if (!cod) return;
+    if (apuCods.includes(cod)) {
       alert('Ya existe un APU con ese c\xF3digo. Lo selecciono para que lo edites.');
-      setSel(codCleaned);
+      setSel(cod);
       return;
     }
-    if (!cat.rubros.some(r => r.cod === codCleaned)) {
-      const crear = confirm('No existe un rubro con c\xF3digo "' + codCleaned + '". \xBFCrearlo tambi\xE9n en el cat\xE1logo de rubros?');
+    if (!cat.rubros.some(r => r.cod === cod)) {
+      const crear = confirm('No existe un rubro con c\xF3digo "' + cod + '". \xBFCrearlo tambi\xE9n en el cat\xE1logo de rubros?');
       if (!crear) return;
-      const desc = prompt('Descripci\xF3n del rubro "' + codCleaned + '":');
-      if (desc === null) return; // Cancel → aborta todo
-      const descCleaned = (desc || '').trim();
-      if (!descCleaned) { alert('La descripci\xF3n no puede estar vac\xEDa.'); return; }
-      const unidad = prompt('Unidad (m\xB2, m\xB3, ml, U, kg, Gl, ...). Dej\xE1 vac\xEDo si es rubro padre .00:');
-      if (unidad === null) return; // Cancel → aborta todo
-      const unidadCleaned = (unidad || '').trim();
-      const padre = codCleaned.split('.')[0] + '.00';
+      const desc = prompt('Descripci\xF3n del rubro:') || '';
+      const unidad = prompt('Unidad (m\xB2, m\xB3, ml, U, kg, Gl, ...):') || '';
+      const padre = cod.split('.')[0] + '.00';
       const padreObj = cat.rubros.find(r => r.cod === padre);
       const rubroPadre = padreObj ? padreObj.desc : '';
       setCat(c => ({
         ...c,
-        rubros: [...c.rubros, { cod: codCleaned, rubro: rubroPadre, subrubro: '', desc: descCleaned, unidad: unidadCleaned }],
-        biblioteca: [...c.biblioteca, { apu: codCleaned, tipo: 'M', insumo: '', cant: 0, nota: '' }],
-        deletedApus: (Array.isArray(c.deletedApus) ? c.deletedApus : []).filter(x => x !== codCleaned)
+        rubros: [...c.rubros, { cod, rubro: rubroPadre, subrubro: '', desc, unidad }],
+        biblioteca: [...c.biblioteca, { apu: cod, tipo: 'M', insumo: '', cant: 0, nota: '' }],
+        deletedApus: (Array.isArray(c.deletedApus) ? c.deletedApus : []).filter(x => x !== cod)
       }));
     } else {
       setCat(c => ({
         ...c,
-        biblioteca: [...c.biblioteca, { apu: codCleaned, tipo: 'M', insumo: '', cant: 0, nota: '' }],
-        deletedApus: (Array.isArray(c.deletedApus) ? c.deletedApus : []).filter(x => x !== codCleaned)
+        biblioteca: [...c.biblioteca, { apu: cod, tipo: 'M', insumo: '', cant: 0, nota: '' }],
+        deletedApus: (Array.isArray(c.deletedApus) ? c.deletedApus : []).filter(x => x !== cod)
       }));
     }
-    setSel(codCleaned);
+    setSel(cod);
   };
   const updFila = (idx, patch) => {
     let n = -1;
@@ -3218,6 +3076,257 @@ function RevitOrigenModal({
 }
 
 /* ============================ VISTA OBRA ============================ */
+/* ============================ APUs EN USO (vidriera) ============================ */
+function ApusEnUsoPanel({ obra, motor, cat, informeSecciones }) {
+  const e = React.createElement;
+  // Estado: Set de códigos APU expandidos
+  const [expandidos, setExpandidos] = useState(() => new Set());
+  // Cuando es informe, todo expandido por defecto
+  const allExpand = !!informeSecciones;
+
+  const items = (obra && obra.items) || [];
+
+  // Calcular cada APU en uso con su desglose
+  const apusEnUso = useMemo(() => {
+    if (!motor) return [];
+    return items
+      .filter(it => Number(it.cant) > 0 && motor.apuTiene(it.cod))
+      .map(it => {
+        const cant = Number(it.cant) || 0;
+        const rub = motor.rubMap[it.cod] || {};
+        const insumosRaw = motor.bibMap[it.cod] || [];
+        const insumos = insumosRaw.map(b => {
+          const precioUnit = motor.costoInsumoEnObra(b.tipo, b.insumo, obra);
+          let insumoData = null;
+          if (b.tipo === 'M') insumoData = motor.matMap[b.insumo];
+          else if (b.tipo === 'MO') insumoData = motor.moMap[b.insumo];
+          else if (b.tipo === 'E') insumoData = motor.herrMap[b.insumo];
+          const subtotal = (Number(b.cant) || 0) * precioUnit;
+          const existe = !!insumoData;
+          return {
+            tipo: b.tipo,
+            cod: b.insumo,
+            cant: Number(b.cant) || 0,
+            nota: b.nota || '',
+            desc: existe ? (insumoData.desc || '') : '(insumo no existe en catálogo)',
+            unidad: existe ? (insumoData.unidad || '') : '',
+            precioUnit,
+            subtotal,
+            sinPrecio: !precioUnit || precioUnit <= 0,
+            huerfano: !existe
+          };
+        });
+        const costoUnitario = insumos.reduce((s, i) => s + i.subtotal, 0);
+        const totalAPU = costoUnitario * cant;
+        const subM = insumos.filter(i => i.tipo === 'M').reduce((s, i) => s + i.subtotal, 0);
+        const subMO = insumos.filter(i => i.tipo === 'MO').reduce((s, i) => s + i.subtotal, 0);
+        const subE = insumos.filter(i => i.tipo === 'E').reduce((s, i) => s + i.subtotal, 0);
+        return {
+          cod: it.cod,
+          desc: rub.desc || '(sin descripción)',
+          unidad: rub.unidad || '',
+          cant,
+          insumos,
+          costoUnitario,
+          totalAPU,
+          subM,
+          subMO,
+          subE,
+          rubroPadre: it.cod.split('.')[0] + '.00'
+        };
+      })
+      .sort((a, b) => cmpCodigo(a.cod, b.cod));
+  }, [items, motor, obra]);
+
+  // Agrupar por rubro padre
+  const apusAgrupados = useMemo(() => {
+    const grupos = {};
+    apusEnUso.forEach(a => {
+      if (!grupos[a.rubroPadre]) grupos[a.rubroPadre] = [];
+      grupos[a.rubroPadre].push(a);
+    });
+    return Object.keys(grupos).sort(cmpCodigo).map(rp => ({
+      rubroPadre: rp,
+      rubroDesc: ((motor && motor.rubMap[rp]) || {}).desc || rp,
+      apus: grupos[rp],
+      total: grupos[rp].reduce((s, a) => s + a.totalAPU, 0)
+    }));
+  }, [apusEnUso, motor]);
+
+  const totalGeneral = apusEnUso.reduce((s, a) => s + a.totalAPU, 0);
+  const sinPrecioCount = apusEnUso.reduce((s, a) => s + a.insumos.filter(i => i.sinPrecio).length, 0);
+  const huerfanosCount = apusEnUso.reduce((s, a) => s + a.insumos.filter(i => i.huerfano).length, 0);
+
+  const toggle = (cod) => {
+    const next = new Set(expandidos);
+    if (next.has(cod)) next.delete(cod);
+    else next.add(cod);
+    setExpandidos(next);
+  };
+  const expandAll = () => setExpandidos(new Set(apusEnUso.map(a => a.cod)));
+  const collapseAll = () => setExpandidos(new Set());
+
+  if (apusEnUso.length === 0) {
+    return e('div', { className: 'seccion-informe' },
+      e('div', { className: 'bg-white border border-stone-300 rounded p-8 text-center' },
+        e(Eye, { size: 32, className: 'text-stone-300 mx-auto mb-2' }),
+        e('p', { className: 'text-stone-500 text-sm' }, 'No hay APUs en uso en esta obra.'),
+        e('p', { className: 'text-stone-400 text-xs mt-1' }, 'Cargá cantidades > 0 en la Planilla de cotización para que aparezcan acá.')
+      )
+    );
+  }
+
+  // ---------- Render ----------
+  const tipoLbl = { M: 'Material', MO: 'Mano de obra', E: 'Equipo' };
+  const tipoColor = { M: 'bg-amber-100 text-amber-800', MO: 'bg-sky-100 text-sky-800', E: 'bg-stone-200 text-stone-700' };
+
+  return e('div', { className: 'seccion-informe' },
+    // Header
+    e('div', { className: 'bg-white border border-stone-300 rounded mb-4 p-4' },
+      e('div', { className: 'flex items-baseline justify-between mb-2' },
+        e('div', null,
+          e('div', { className: 'font-serif text-xl text-stone-800' }, 'APUs en uso'),
+          e('div', { className: 'text-xs text-stone-500 mt-0.5' },
+            'Vidriera de auditoría · ' + apusEnUso.length + ' ítem(s) computado(s) · solo lectura'
+          )
+        ),
+        e('div', { className: 'text-right' },
+          e('div', { className: 'text-xs text-stone-500 uppercase tracking-wide' }, 'Costo directo total'),
+          e('div', { className: 'font-mono text-lg text-stone-800' }, money(totalGeneral))
+        )
+      ),
+      (sinPrecioCount > 0 || huerfanosCount > 0) && e('div', { className: 'flex gap-3 text-xs mt-2 pt-2 border-t border-stone-100' },
+        sinPrecioCount > 0 && e('div', { className: 'flex items-center gap-1.5 text-amber-700' },
+          e('div', { className: 'w-2 h-2 rounded-full bg-amber-400' }),
+          sinPrecioCount + ' insumo(s) sin precio cargado en la obra'
+        ),
+        huerfanosCount > 0 && e('div', { className: 'flex items-center gap-1.5 text-red-700' },
+          e('div', { className: 'w-2 h-2 rounded-full bg-red-400' }),
+          huerfanosCount + ' insumo(s) huérfano(s) (no existen en catálogo)'
+        )
+      ),
+      !informeSecciones && e('div', { className: 'noprint flex gap-2 mt-3 pt-3 border-t border-stone-100' },
+        e('button', {
+          onClick: expandAll,
+          className: 'text-xs px-2.5 py-1 bg-stone-100 hover:bg-stone-200 rounded text-stone-700 flex items-center gap-1'
+        }, e(ChevronDown, { size: 12 }), 'Expandir todo'),
+        e('button', {
+          onClick: collapseAll,
+          className: 'text-xs px-2.5 py-1 bg-stone-100 hover:bg-stone-200 rounded text-stone-700 flex items-center gap-1'
+        }, e(ChevronRight, { size: 12 }), 'Colapsar todo')
+      )
+    ),
+
+    // Lista de APUs agrupados por rubro
+    apusAgrupados.map(g => e('div', { key: g.rubroPadre, className: 'mb-4' },
+      // Cinta de rubro
+      e('div', { className: 'bg-stone-800 text-white px-4 py-2 rounded-t flex items-baseline justify-between' },
+        e('div', { className: 'flex items-baseline gap-3' },
+          e('span', { className: 'font-mono text-xs opacity-70' }, g.rubroPadre.replace('.00','')),
+          e('span', { className: 'font-semibold uppercase tracking-wide text-sm' }, g.rubroDesc)
+        ),
+        e('div', { className: 'text-right text-sm' },
+          e('span', { className: 'font-mono' }, money(g.total)),
+          e('span', { className: 'text-xs opacity-60 ml-2' }, '(' + (totalGeneral > 0 ? (g.total/totalGeneral*100).toFixed(1) : '0') + '%)')
+        )
+      ),
+      // APUs del rubro
+      e('div', { className: 'bg-white border-x border-b border-stone-300 rounded-b divide-y divide-stone-200' },
+        g.apus.map(a => {
+          const abierto = allExpand || expandidos.has(a.cod);
+          const pctM = a.costoUnitario > 0 ? (a.subM / a.costoUnitario * 100) : 0;
+          const pctMO = a.costoUnitario > 0 ? (a.subMO / a.costoUnitario * 100) : 0;
+          const pctE = a.costoUnitario > 0 ? (a.subE / a.costoUnitario * 100) : 0;
+          const tieneAlertas = a.insumos.some(i => i.sinPrecio || i.huerfano);
+
+          return e('div', { key: a.cod, className: 'p-3' },
+            // Header del APU (clickeable para expandir si no es informe)
+            e('div', {
+              onClick: informeSecciones ? null : () => toggle(a.cod),
+              className: (informeSecciones ? '' : 'cursor-pointer hover:bg-stone-50 ') + 'flex items-baseline gap-3 -m-1 p-1 rounded'
+            },
+              !informeSecciones && e('div', { className: 'shrink-0 text-stone-400 mt-1' },
+                abierto ? e(ChevronDown, { size: 14 }) : e(ChevronRight, { size: 14 })
+              ),
+              e('div', { className: 'shrink-0 font-mono text-xs text-stone-500 w-16' }, a.cod),
+              e('div', { className: 'flex-1' },
+                e('div', { className: 'text-sm text-stone-800' }, a.desc),
+                e('div', { className: 'text-xs text-stone-500 mt-0.5 flex items-center gap-3' },
+                  e('span', null, 'Cant: ', e('span', { className: 'font-mono text-stone-700' }, a.cant.toLocaleString('es-AR')), ' ', a.unidad),
+                  e('span', null, 'Costo unit: ', e('span', { className: 'font-mono text-stone-700' }, money(a.costoUnitario))),
+                  tieneAlertas && e('span', { className: 'inline-flex items-center gap-1 px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded text-[10px]' },
+                    e(AlertTriangle, { size: 10 }), 'Revisar'
+                  )
+                )
+              ),
+              e('div', { className: 'shrink-0 text-right' },
+                e('div', { className: 'font-mono text-sm text-stone-800' }, money(a.totalAPU)),
+                e('div', { className: 'text-[10px] text-stone-400' }, (totalGeneral > 0 ? (a.totalAPU/totalGeneral*100).toFixed(2) : '0') + ' %')
+              )
+            ),
+
+            // Barra de incidencia M/MO/E (siempre visible)
+            a.costoUnitario > 0 && e('div', { className: 'mt-2 ml-' + (informeSecciones ? '0' : '7') },
+              e('div', { className: 'flex h-1.5 rounded overflow-hidden bg-stone-100' },
+                pctM > 0 && e('div', { className: 'bg-amber-400', style: { width: pctM + '%' }, title: 'Materiales ' + pctM.toFixed(1) + '%' }),
+                pctMO > 0 && e('div', { className: 'bg-sky-400', style: { width: pctMO + '%' }, title: 'MO ' + pctMO.toFixed(1) + '%' }),
+                pctE > 0 && e('div', { className: 'bg-stone-400', style: { width: pctE + '%' }, title: 'Equipos ' + pctE.toFixed(1) + '%' })
+              ),
+              e('div', { className: 'flex gap-3 text-[10px] text-stone-500 mt-1' },
+                e('span', null, e('span', { className: 'inline-block w-2 h-2 bg-amber-400 rounded-sm mr-1 align-middle' }), 'Mat ', pctM.toFixed(0), '%'),
+                e('span', null, e('span', { className: 'inline-block w-2 h-2 bg-sky-400 rounded-sm mr-1 align-middle' }), 'MO ', pctMO.toFixed(0), '%'),
+                pctE > 0 && e('span', null, e('span', { className: 'inline-block w-2 h-2 bg-stone-400 rounded-sm mr-1 align-middle' }), 'Eq ', pctE.toFixed(0), '%')
+              )
+            ),
+
+            // Detalle expandido: tabla de insumos
+            abierto && a.insumos.length > 0 && e('div', { className: 'mt-3 ml-' + (informeSecciones ? '0' : '7') + ' bg-stone-50 border border-stone-200 rounded overflow-hidden' },
+              e('table', { className: 'w-full text-xs' },
+                e('thead', null, e('tr', { className: 'bg-stone-100' },
+                  e('th', { className: 'text-left px-2 py-1.5 font-medium text-stone-600 w-20' }, 'Tipo'),
+                  e('th', { className: 'text-left px-2 py-1.5 font-medium text-stone-600 w-14' }, 'Cód'),
+                  e('th', { className: 'text-left px-2 py-1.5 font-medium text-stone-600' }, 'Insumo'),
+                  e('th', { className: 'text-right px-2 py-1.5 font-medium text-stone-600 w-20' }, 'Cant'),
+                  e('th', { className: 'text-left px-2 py-1.5 font-medium text-stone-600 w-12' }, 'Un'),
+                  e('th', { className: 'text-right px-2 py-1.5 font-medium text-stone-600 w-28' }, '$ unit'),
+                  e('th', { className: 'text-right px-2 py-1.5 font-medium text-stone-600 w-32' }, 'Subtotal')
+                )),
+                e('tbody', null, a.insumos.map((i, idx) =>
+                  e('tr', {
+                    key: idx,
+                    className: 'border-t border-stone-200 ' + (i.sinPrecio ? 'bg-amber-50' : '') + (i.huerfano ? ' bg-red-50' : '')
+                  },
+                    e('td', { className: 'px-2 py-1.5' },
+                      e('span', { className: 'inline-block px-1.5 py-0.5 rounded text-[10px] font-medium ' + (tipoColor[i.tipo] || 'bg-stone-200') }, tipoLbl[i.tipo] || i.tipo)
+                    ),
+                    e('td', { className: 'px-2 py-1.5 font-mono text-stone-600' }, i.cod),
+                    e('td', { className: 'px-2 py-1.5 text-stone-700' },
+                      i.desc,
+                      i.nota && e('span', { className: 'text-stone-400 italic ml-1' }, '· ' + i.nota),
+                      i.huerfano && e('span', { className: 'ml-2 text-red-600 text-[10px]' }, '⚠ huérfano')
+                    ),
+                    e('td', { className: 'px-2 py-1.5 text-right font-mono text-stone-700' }, i.cant.toLocaleString('es-AR')),
+                    e('td', { className: 'px-2 py-1.5 text-stone-500' }, i.unidad),
+                    e('td', { className: 'px-2 py-1.5 text-right font-mono ' + (i.sinPrecio ? 'text-amber-700' : 'text-stone-700') },
+                      i.sinPrecio ? 'sin precio' : money(i.precioUnit)
+                    ),
+                    e('td', { className: 'px-2 py-1.5 text-right font-mono text-stone-800' }, money(i.subtotal))
+                  )
+                )),
+                e('tfoot', null, e('tr', { className: 'border-t-2 border-stone-300 bg-stone-100 font-semibold' },
+                  e('td', { className: 'px-2 py-1.5', colSpan: 6 }, 'Costo unitario del APU'),
+                  e('td', { className: 'px-2 py-1.5 text-right font-mono' }, money(a.costoUnitario))
+                ))
+              )
+            )
+          );
+        })
+      )
+    ))
+  );
+}
+
+
 function ObraView({
   obra,
   setObra,
@@ -3430,7 +3539,7 @@ function ObraView({
     setObra: setObra
   })), /*#__PURE__*/React.createElement("div", {
     className: "noprint flex gap-1 border-b border-stone-300 mb-4"
-  }, [['caratula', 'Carátula', BookOpen], ['precios', 'Precios', Tag], ['computo', 'Planilla de cotización', Calculator], ['coef', 'Coeficiente', FileText], ['presup', 'Presupuesto', FileText], ['explosion', 'Explosión', ShoppingCart], ['plan', 'Plan de trabajo', CalendarRange], ['curva', 'Curva de inversión', TrendingUp], ['camino', 'Camino crítico', GitBranch], ['suministro', 'Suministro', Package]].map(([k, lbl, Icon]) => /*#__PURE__*/React.createElement("button", {
+  }, [['caratula', 'Carátula', BookOpen], ['precios', 'Precios', Tag], ['computo', 'Planilla de cotización', Calculator], ['coef', 'Coeficiente', FileText], ['apus', 'APUs en uso', Eye], ['presup', 'Presupuesto', FileText], ['explosion', 'Explosión', ShoppingCart], ['plan', 'Plan de trabajo', CalendarRange], ['curva', 'Curva de inversión', TrendingUp], ['camino', 'Camino crítico', GitBranch], ['suministro', 'Suministro', Package]].map(([k, lbl, Icon]) => /*#__PURE__*/React.createElement("button", {
     key: k,
     onClick: () => setTab(k),
     className: `flex items-center gap-1.5 px-3 py-2 text-sm border-b-2 -mb-px ${tab === k ? 'border-amber-600 text-stone-800 font-medium' : 'border-transparent text-stone-500 hover:text-stone-700'}`
@@ -3546,11 +3655,7 @@ function ObraView({
     className: "text-xs text-stone-400 mt-2"
   }, "Los \xEDtems se agrupan por rubro principal. INC % en la fila del rubro es la incidencia sobre el total de la obra; en la fila del \xEDtem, es la incidencia dentro de su rubro.")), mostrar('coef') && /*#__PURE__*/React.createElement("div", {
     className: "max-w-2xl seccion-informe"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "noprint bg-amber-50 border border-amber-200 rounded p-3 mb-3 text-xs text-stone-700"
-  }, /*#__PURE__*/React.createElement("div", { className: "font-medium text-stone-800 mb-1" }, "\u26A0 IVA y precios de insumos"),
-    /*#__PURE__*/React.createElement("p", null, "Los precios de materiales y equipos cargados en la pesta\xF1a ", /*#__PURE__*/React.createElement("strong", null, "Precios"), " se usan ", /*#__PURE__*/React.createElement("strong", null, "sin IVA"), " para calcular el costo directo. El IVA (21%) se aplica ac\xE1, en el coeficiente de pase. La mano de obra (subcontratistas monotributistas) ya factura sin IVA.")
-  ), /*#__PURE__*/React.createElement("p", {
+  }, /*#__PURE__*/React.createElement("p", {
     className: "text-sm text-stone-500 mb-3"
   }, "Carg\xE1 los porcentajes (n\xFAmero entero: para 15% escrib\xED 15). El coeficiente se calcula solo."), /*#__PURE__*/React.createElement("div", {
     className: "bg-white border border-stone-300 rounded overflow-hidden"
@@ -3629,7 +3734,12 @@ function ObraView({
   }, "PRECIO TOTAL DE OBRA"), /*#__PURE__*/React.createElement("td", {
     className: td + ' text-right font-mono text-lg',
     colSpan: 2
-  }, money(costoDirecto * coef))))))), mostrar('presup') && /*#__PURE__*/React.createElement("div", { className: "seccion-informe" }, /*#__PURE__*/React.createElement("div", {
+  }, money(costoDirecto * coef))))))), mostrar('apus') && /*#__PURE__*/React.createElement(ApusEnUsoPanel, {
+    obra: obra,
+    motor: motor,
+    cat: cat,
+    informeSecciones: informeSecciones
+  }), mostrar('presup') && /*#__PURE__*/React.createElement("div", { className: "seccion-informe" }, /*#__PURE__*/React.createElement("div", {
     className: "text-sm text-stone-500 mb-3"
   }, "Precio de venta \u2014 coeficiente ", coef.toLocaleString('es-AR', {
     minimumFractionDigits: 4,
@@ -6920,47 +7030,6 @@ function Precios({ obra, setObra, cat }) {
     setObra(next);
   };
 
-  // Handlers para materiales y herramientas con doble columna IVA
-  // Guarda SIEMPRE el precio sin IVA en prec[tipoKey] (el que usa el cómputo)
-  // Y guarda el con IVA en prec[tipoKey + 'ConIVA'] (sólo para UX)
-  const setPrecioSinIVA = (tipoKey, cod, val) => {
-    const next = { ...obra };
-    const prec = { ...(next.precios || {}) };
-    const seccion = { ...(prec[tipoKey] || {}) };
-    const seccionIVA = { ...(prec[tipoKey + 'ConIVA'] || {}) };
-    if (val === '' || val === null || val === undefined || (typeof val === 'string' && val.trim() === '')) {
-      delete seccion[cod];
-      delete seccionIVA[cod];
-    } else {
-      const num = Number(val) || 0;
-      seccion[cod] = num;
-      seccionIVA[cod] = Math.round(num * 1.21 * 100) / 100;
-    }
-    prec[tipoKey] = seccion;
-    prec[tipoKey + 'ConIVA'] = seccionIVA;
-    next.precios = prec;
-    setObra(next);
-  };
-
-  const setPrecioConIVA = (tipoKey, cod, val) => {
-    const next = { ...obra };
-    const prec = { ...(next.precios || {}) };
-    const seccion = { ...(prec[tipoKey] || {}) };
-    const seccionIVA = { ...(prec[tipoKey + 'ConIVA'] || {}) };
-    if (val === '' || val === null || val === undefined || (typeof val === 'string' && val.trim() === '')) {
-      delete seccion[cod];
-      delete seccionIVA[cod];
-    } else {
-      const num = Number(val) || 0;
-      seccionIVA[cod] = num;
-      seccion[cod] = Math.round((num / 1.21) * 100) / 100;
-    }
-    prec[tipoKey] = seccion;
-    prec[tipoKey + 'ConIVA'] = seccionIVA;
-    next.precios = prec;
-    setObra(next);
-  };
-
   const setProveedor = (tipoKey, cod, val) => {
     const next = { ...obra };
     const prov = { ...(next.proveedores || {}) };
@@ -7012,7 +7081,6 @@ function Precios({ obra, setObra, cat }) {
   const renderMateriales = () => {
     const listFull = filtrar(cat.materiales || [], ['cod', 'desc', 'div']);
     const overrideMap = oPrec.materiales || {};
-    const overrideMapConIVA = oPrec.materialesConIVA || {};
     const proveedorMap = oProv.materiales || {};
 
     // Renderiza una tabla con agrupación por División
@@ -7033,43 +7101,30 @@ function Precios({ obra, setObra, cat }) {
             e('th', { className: th }, 'Descripción'),
             e('th', { className: th + ' text-right' }, 'Unidad'),
             e('th', { className: th + ' text-right' }, 'Precio genérico'),
-            e('th', { className: th + ' text-right' }, 'Precio sin IVA'),
-            e('th', { className: th + ' text-right' }, 'Precio con IVA (21%)'),
+            e('th', { className: th + ' text-right' }, 'Precio en esta obra'),
             e('th', { className: th + ' w-48' }, 'Proveedor')
           )),
           e('tbody', null, divsOrdenadas.map(divNombre => e(React.Fragment, { key: 'div-' + divNombre },
             e('tr', { className: divisionRowClass },
-              e('td', { className: td + ' font-semibold uppercase tracking-wide text-xs', colSpan: 7 }, divNombre)
+              e('td', { className: td + ' font-semibold uppercase tracking-wide text-xs', colSpan: 6 }, divNombre)
             ),
             grupos[divNombre].map(m => {
               const precioGenerico = Number(m.precio) || 0;
               const tieneOverride = (m.cod in overrideMap);
-              const precioSinIVA = tieneOverride ? Number(overrideMap[m.cod]) : null;
-              // Si hay conIVA cargado explícitamente, lo uso. Si no, lo calculo del sin IVA.
-              const tieneConIVA = (m.cod in overrideMapConIVA);
-              const precioConIVA = tieneConIVA
-                ? Number(overrideMapConIVA[m.cod])
-                : (precioSinIVA !== null ? Math.round(precioSinIVA * 1.21 * 100) / 100 : null);
+              const precioOverride = tieneOverride ? Number(overrideMap[m.cod]) : null;
+              const precioEfectivo = tieneOverride ? precioOverride : precioGenerico;
               const proveedor = proveedorMap[m.cod] || '';
               return e('tr', { key: m.cod, className: 'hover:bg-stone-50' },
                 e('td', { className: td + ' font-mono text-xs text-stone-600 pl-4' }, m.cod),
                 e('td', { className: td }, m.desc),
                 e('td', { className: td + ' text-right text-stone-500' }, m.unidad || ''),
                 e('td', { className: td + ' text-right font-mono text-xs text-stone-400' }, precioGenerico > 0 ? money(precioGenerico) : '—'),
-                e('td', { className: td + (precioSinIVA && precioSinIVA > 0 ? '' : ' bg-amber-50') },
+                e('td', { className: td + (precioEfectivo > 0 ? '' : ' bg-amber-50') },
                   e(EditCell, {
                     value: tieneOverride ? overrideMap[m.cod] : '',
                     type: 'number',
                     align: 'right',
-                    onCommit: v => setPrecioSinIVA('materiales', m.cod, v)
-                  })
-                ),
-                e('td', { className: td + (precioConIVA && precioConIVA > 0 ? '' : ' bg-amber-50') },
-                  e(EditCell, {
-                    value: tieneConIVA ? overrideMapConIVA[m.cod] : (precioConIVA || ''),
-                    type: 'number',
-                    align: 'right',
-                    onCommit: v => setPrecioConIVA('materiales', m.cod, v)
+                    onCommit: v => setOverride('materiales', m.cod, v)
                   })
                 ),
                 e('td', { className: td },
@@ -7187,7 +7242,6 @@ function Precios({ obra, setObra, cat }) {
   const renderHerramientas = () => {
     const listFull = filtrar(cat.herramientas || [], ['cod', 'desc']).sort((a, b) => cmpCodigo(a.cod, b.cod));
     const overrideMap = oPrec.herramientas || {};
-    const overrideMapConIVA = oPrec.herramientasConIVA || {};
     const proveedorMap = oProv.herramientas || {};
 
     const renderTabla = (lista) => e('div', { className: 'overflow-x-auto' },
@@ -7197,19 +7251,13 @@ function Precios({ obra, setObra, cat }) {
           e('th', { className: th }, 'Descripción'),
           e('th', { className: th + ' text-right' }, 'Tenencia'),
           e('th', { className: th + ' text-right' }, 'Valor genérico'),
-          e('th', { className: th + ' text-right' }, 'Valor sin IVA'),
-          e('th', { className: th + ' text-right' }, 'Valor con IVA (21%)'),
+          e('th', { className: th + ' text-right' }, 'Valor en esta obra'),
           e('th', { className: th + ' text-right' }, 'Costo/h'),
           e('th', { className: th + ' w-48' }, 'Proveedor')
         )),
         e('tbody', null, lista.map(h => {
           const valorGenerico = Number(h.valor) || 0;
           const tieneOverride = (h.cod in overrideMap);
-          const valorSinIVA = tieneOverride ? Number(overrideMap[h.cod]) : null;
-          const tieneConIVA = (h.cod in overrideMapConIVA);
-          const valorConIVA = tieneConIVA
-            ? Number(overrideMapConIVA[h.cod])
-            : (valorSinIVA !== null ? Math.round(valorSinIVA * 1.21 * 100) / 100 : null);
           const hParaCalculo = tieneOverride ? { ...h, valor: Number(overrideMap[h.cod]) || 0 } : h;
           const costoH = costoHerramienta(hParaCalculo);
           const proveedor = proveedorMap[h.cod] || '';
@@ -7218,20 +7266,12 @@ function Precios({ obra, setObra, cat }) {
             e('td', { className: td }, h.desc),
             e('td', { className: td + ' text-right text-stone-500 text-xs' }, h.tenencia || '—'),
             e('td', { className: td + ' text-right font-mono text-xs text-stone-400' }, valorGenerico > 0 ? money(valorGenerico) : '—'),
-            e('td', { className: td + (valorSinIVA && valorSinIVA > 0 ? '' : ' bg-amber-50') },
+            e('td', { className: td },
               e(EditCell, {
                 value: tieneOverride ? overrideMap[h.cod] : '',
                 type: 'number',
                 align: 'right',
-                onCommit: v => setPrecioSinIVA('herramientas', h.cod, v)
-              })
-            ),
-            e('td', { className: td + (valorConIVA && valorConIVA > 0 ? '' : ' bg-amber-50') },
-              e(EditCell, {
-                value: tieneConIVA ? overrideMapConIVA[h.cod] : (valorConIVA || ''),
-                type: 'number',
-                align: 'right',
-                onCommit: v => setPrecioConIVA('herramientas', h.cod, v)
+                onCommit: v => setOverride('herramientas', h.cod, v)
               })
             ),
             e('td', { className: td + ' text-right font-mono text-stone-700' }, costoH > 0 ? money(costoH) : '—'),
@@ -7287,15 +7327,10 @@ function Precios({ obra, setObra, cat }) {
         e('div', null,
           e('div', { className: 'font-medium text-stone-800' }, 'Precios y proveedores por obra'),
           e('p', { className: 'text-xs text-stone-600 mt-1' },
-            'Cargá el precio y el proveedor que trabaja en ',
+            'Cargá el precio y el nombre del proveedor/contratista que trabaja en ',
             e('span', { className: 'italic' }, 'esta obra'),
-            '. En Materiales y Equipos podés cargar el valor en cualquiera de las dos columnas (',
-            e('span', { className: 'font-medium' }, 'sin IVA'),
-            ' o ',
-            e('span', { className: 'font-medium' }, 'con IVA'),
-            '): la otra se calcula automáticamente. El cómputo siempre usa el valor ',
-            e('span', { className: 'font-medium' }, 'sin IVA'),
-            '; el IVA se aplica en la pestaña Coeficiente. Mano de obra va sin IVA (subcontratistas monotributistas).'
+            '. Si dejás el precio vacío, se usa el precio genérico del catálogo. Si dejás el proveedor vacío, queda como "genérico". ',
+            'La identidad del insumo (código, descripción, unidad, factor) sigue siendo genérica y se edita desde la cinta negra.'
           )
         )
       )
@@ -7643,6 +7678,7 @@ function PrintModal({ obra, onClose, onPrint }) {
     { id: 'portada',    label: 'Portada con datos de la obra' },
     { id: 'computo',    label: 'Cómputo / Planilla de cotización' },
     { id: 'coef',       label: 'Coeficiente de pase' },
+    { id: 'apus',       label: 'APUs en uso (auditoría)' },
     { id: 'presup',     label: 'Presupuesto formal' },
     { id: 'explosion',  label: 'Explosión de insumos' },
     { id: 'plan',       label: 'Plan de trabajo' },
@@ -8481,9 +8517,7 @@ function App() {
     setCat: setCat
   }), view === 'rubros' && /*#__PURE__*/React.createElement(Rubros, {
     cat: cat,
-    setCat: setCat,
-    obras: obras,
-    setObras: setObras
+    setCat: setCat
   }), view === 'apus' && /*#__PURE__*/React.createElement(APUs, {
     cat: cat,
     setCat: setCat,
