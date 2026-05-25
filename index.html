@@ -6886,7 +6886,7 @@ function Precios({ obra, setObra, cat }) {
             e('th', { className: th + ' text-right' }, 'Unidad'),
             e('th', { className: th + ' text-right' }, 'Precio genérico'),
             e('th', { className: th + ' text-right' }, 'Precio sin IVA'),
-            e('th', { className: th + ' text-right' }, 'Precio con IVA'),
+            e('th', { className: th + ' text-right' }, 'Precio con IVA (21%)'),
             e('th', { className: th + ' w-48' }, 'Proveedor')
           )),
           e('tbody', null, divsOrdenadas.map(divNombre => e(React.Fragment, { key: 'div-' + divNombre },
@@ -7050,7 +7050,7 @@ function Precios({ obra, setObra, cat }) {
           e('th', { className: th + ' text-right' }, 'Tenencia'),
           e('th', { className: th + ' text-right' }, 'Valor genérico'),
           e('th', { className: th + ' text-right' }, 'Valor sin IVA'),
-          e('th', { className: th + ' text-right' }, 'Valor con IVA'),
+          e('th', { className: th + ' text-right' }, 'Valor con IVA (21%)'),
           e('th', { className: th + ' text-right' }, 'Costo/h'),
           e('th', { className: th + ' w-48' }, 'Proveedor')
         )),
