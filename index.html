@@ -6879,9 +6879,9 @@ function Precios({ obra, setObra, cat }) {
     };
 
     const enUso = listFull.filter(m => insumosEnUso.M.has(m.cod));
-    const otros = listFull.filter(m => !insumosEnUso.M.has(m.cod));
+    const otros = listFull;
     const totalEnUsoSinFiltro = insumosEnUso.M.size;
-    const totalOtrosSinFiltro = (cat.materiales || []).length - totalEnUsoSinFiltro;
+    const totalOtrosSinFiltro = (cat.materiales || []).length;
 
     if ((cat.materiales || []).length === 0) {
       return e('div', { className: 'text-sm text-stone-400 italic p-4 text-center' }, 'No hay materiales en el catálogo.');
@@ -6896,8 +6896,8 @@ function Precios({ obra, setObra, cat }) {
       hayItemsComputados && totalEnUsoSinFiltro > 0 && enUso.length === 0 && e('div', { className: 'text-xs text-stone-400 italic p-2' },
         'Ningún material en uso coincide con la búsqueda.'
       ),
-      seccionHeader('Otros materiales', 'gris', otros.length, totalOtrosSinFiltro),
-      otros.length > 0 ? renderTabla(otros) : e('div', { className: 'text-sm text-stone-400 italic p-4 text-center' }, 'Ningún otro material coincide con la búsqueda.')
+      seccionHeader('Listado completo del catálogo', 'gris', otros.length, totalOtrosSinFiltro),
+      otros.length > 0 ? renderTabla(otros) : e('div', { className: 'text-sm text-stone-400 italic p-4 text-center' }, 'Ningún material coincide con la búsqueda.')
     );
   };
 
@@ -6949,9 +6949,9 @@ function Precios({ obra, setObra, cat }) {
     );
 
     const enUso = listFull.filter(mo => insumosEnUso.MO.has(mo.cod));
-    const otros = listFull.filter(mo => !insumosEnUso.MO.has(mo.cod));
+    const otros = listFull;
     const totalEnUsoSinFiltro = insumosEnUso.MO.size;
-    const totalOtrosSinFiltro = (cat.manoObra || []).length - totalEnUsoSinFiltro;
+    const totalOtrosSinFiltro = (cat.manoObra || []).length;
 
     if ((cat.manoObra || []).length === 0) {
       return e('div', { className: 'text-sm text-stone-400 italic p-4 text-center' }, 'No hay mano de obra en el catálogo.');
@@ -6966,8 +6966,8 @@ function Precios({ obra, setObra, cat }) {
       hayItemsComputados && totalEnUsoSinFiltro > 0 && enUso.length === 0 && e('div', { className: 'text-xs text-stone-400 italic p-2' },
         'Ninguna mano de obra en uso coincide con la búsqueda.'
       ),
-      seccionHeader('Otras categorías de mano de obra', 'gris', otros.length, totalOtrosSinFiltro),
-      otros.length > 0 ? renderTabla(otros) : e('div', { className: 'text-sm text-stone-400 italic p-4 text-center' }, 'Ninguna otra mano de obra coincide con la búsqueda.')
+      seccionHeader('Listado completo del catálogo', 'gris', otros.length, totalOtrosSinFiltro),
+      otros.length > 0 ? renderTabla(otros) : e('div', { className: 'text-sm text-stone-400 italic p-4 text-center' }, 'Ninguna mano de obra coincide con la búsqueda.')
     );
   };
 
@@ -7021,9 +7021,9 @@ function Precios({ obra, setObra, cat }) {
     );
 
     const enUso = listFull.filter(h => insumosEnUso.EQ.has(h.cod));
-    const otros = listFull.filter(h => !insumosEnUso.EQ.has(h.cod));
+    const otros = listFull;
     const totalEnUsoSinFiltro = insumosEnUso.EQ.size;
-    const totalOtrosSinFiltro = (cat.herramientas || []).length - totalEnUsoSinFiltro;
+    const totalOtrosSinFiltro = (cat.herramientas || []).length;
 
     if ((cat.herramientas || []).length === 0) {
       return e('div', { className: 'text-sm text-stone-400 italic p-4 text-center' }, 'No hay equipos en el catálogo.');
@@ -7043,8 +7043,8 @@ function Precios({ obra, setObra, cat }) {
       hayItemsComputados && totalEnUsoSinFiltro > 0 && enUso.length === 0 && e('div', { className: 'text-xs text-stone-400 italic p-2' },
         'Ningún equipo en uso coincide con la búsqueda.'
       ),
-      seccionHeader('Otros equipos', 'gris', otros.length, totalOtrosSinFiltro),
-      otros.length > 0 ? renderTabla(otros) : e('div', { className: 'text-sm text-stone-400 italic p-4 text-center' }, 'Ningún otro equipo coincide con la búsqueda.')
+      seccionHeader('Listado completo del catálogo', 'gris', otros.length, totalOtrosSinFiltro),
+      otros.length > 0 ? renderTabla(otros) : e('div', { className: 'text-sm text-stone-400 italic p-4 text-center' }, 'Ningún equipo coincide con la búsqueda.')
     );
   };
 
