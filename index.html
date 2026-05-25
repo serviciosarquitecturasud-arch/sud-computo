@@ -584,6 +584,7 @@ function SvgLineChart({
   data,
   xLabel
 }) {
+  const [hoverIdx, setHoverIdx] = React.useState(null);
   const W = 620,
     H = 250,
     padL = 42,
@@ -659,7 +660,8 @@ function SvgLineChart({
         data.map((d, i) => /*#__PURE__*/React.createElement("circle", {
           key: 'c-' + s.key + '-' + i,
           cx: x(i), cy: y(d[s.key]),
-          r: "2.5", fill: s.color
+          r: hoverIdx === i ? "5" : "2.5", fill: s.color,
+          style: { transition: 'r 0.1s' }
         }))
       );
     }),
@@ -674,7 +676,77 @@ function SvgLineChart({
       /*#__PURE__*/React.createElement("text", {
         x: "14", y: "0", fontSize: "11", fill: "#44403c"
       }, s.key)
-    ))
+    )),
+    // Áreas invisibles más grandes para captar hover (encima de todo para mouse events)
+    data.map((d, i) => /*#__PURE__*/React.createElement("rect", {
+      key: 'hot-' + i,
+      x: x(i) - (n > 1 ? iw / (n - 1) / 2 : iw / 2),
+      y: padT,
+      width: n > 1 ? iw / (n - 1) : iw,
+      height: ih,
+      fill: 'transparent',
+      style: { cursor: 'pointer' },
+      onMouseEnter: () => setHoverIdx(i),
+      onMouseLeave: () => setHoverIdx(null)
+    })),
+    // Tooltip (cuando hay hover)
+    hoverIdx != null && data[hoverIdx] && (() => {
+      const d = data[hoverIdx];
+      const tipW = 180, tipH = 86;
+      // Posicionar tooltip a izq o der del nodo según ubicación
+      const nodeX = x(hoverIdx);
+      const tipX = nodeX + tipW + 12 > W - padR ? nodeX - tipW - 12 : nodeX + 12;
+      const tipY = Math.max(padT, Math.min(H - padB - tipH, y(Math.max(d.Financiero, d['Horas-hombre'])) - tipH / 2));
+      // Formateadores
+      const fmtMoney = v => '$' + (v || 0).toLocaleString('es-AR', { maximumFractionDigits: 0 });
+      const fmtHs = v => (v || 0).toLocaleString('es-AR', { maximumFractionDigits: 0 }) + ' hs';
+      return /*#__PURE__*/React.createElement("g", {
+        key: 'tooltip',
+        style: { pointerEvents: 'none' }
+      },
+        // Línea vertical en el nodo
+        /*#__PURE__*/React.createElement("line", {
+          x1: nodeX, y1: padT, x2: nodeX, y2: H - padB,
+          stroke: '#a8a29e', strokeWidth: '1', strokeDasharray: '2 2'
+        }),
+        // Caja del tooltip
+        /*#__PURE__*/React.createElement("rect", {
+          x: tipX, y: tipY, width: tipW, height: tipH,
+          fill: '#ffffff', stroke: '#57534e', strokeWidth: '1', rx: '3'
+        }),
+        // Título: Semana N
+        /*#__PURE__*/React.createElement("text", {
+          x: tipX + 8, y: tipY + 14,
+          fontSize: '11', fontWeight: '700', fill: '#1c1917'
+        }, 'Semana ' + d.sem),
+        // Financiero %
+        /*#__PURE__*/React.createElement("circle", {
+          cx: tipX + 12, cy: tipY + 30, r: '3.5', fill: '#dc2626'
+        }),
+        /*#__PURE__*/React.createElement("text", {
+          x: tipX + 20, y: tipY + 33,
+          fontSize: '10', fill: '#44403c'
+        }, 'Financiero: ' + d.Financiero.toFixed(1) + '%'),
+        // Monto $
+        /*#__PURE__*/React.createElement("text", {
+          x: tipX + 20, y: tipY + 45,
+          fontSize: '9', fill: '#78716c'
+        }, fmtMoney(d.montoAcum)),
+        // Horas-hombre %
+        /*#__PURE__*/React.createElement("circle", {
+          cx: tipX + 12, cy: tipY + 60, r: '3.5', fill: '#2563eb'
+        }),
+        /*#__PURE__*/React.createElement("text", {
+          x: tipX + 20, y: tipY + 63,
+          fontSize: '10', fill: '#44403c'
+        }, 'Horas-hombre: ' + d['Horas-hombre'].toFixed(1) + '%'),
+        // HH absolutas
+        /*#__PURE__*/React.createElement("text", {
+          x: tipX + 20, y: tipY + 75,
+          fontSize: '9', fill: '#78716c'
+        }, fmtHs(d.hhAcum))
+      );
+    })()
   );
 }
 const SEED = {
@@ -4107,26 +4179,33 @@ function PlanTrabajo({
       React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' } },
         React.createElement("div", { style: { width: '192px', flexShrink: 0 } }),
         React.createElement("div", { style: { flex: '1 1 0%', position: 'relative', height: '20px', minWidth: '100px' } },
-          Array.from({ length: Math.ceil(plazo / 4) }).map((_, m) => React.createElement("div", {
-            key: 'ejem-' + m,
-            style: {
-              position: 'absolute',
-              left: m * 4 / plazo * 100 + '%',
-              width: 4 / plazo * 100 + '%',
-              top: 0,
-              height: '100%',
-              fontSize: '11px',
-              color: '#44403c',
-              fontWeight: '600',
-              borderLeft: '1px solid #57534e',
-              borderTop: '1px solid #57534e',
-              borderBottom: '1px solid #57534e',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: '#f5f5f4'
-            }
-          }, 'Mes ' + (m + 1)))
+          Array.from({ length: Math.ceil(plazo / 4) }).map((_, m) => {
+            // Fix: recortar el último mes si se pasa del plazo (ej. plazo=9, mes 3 ocuparía sem 9-12 pero solo existe sem 9)
+            const inicioSemana = m * 4;
+            const finSemana = Math.min((m + 1) * 4, plazo);
+            const anchoSemanas = finSemana - inicioSemana;
+            return React.createElement("div", {
+              key: 'ejem-' + m,
+              style: {
+                position: 'absolute',
+                left: inicioSemana / plazo * 100 + '%',
+                width: anchoSemanas / plazo * 100 + '%',
+                top: 0,
+                height: '100%',
+                fontSize: '11px',
+                color: '#44403c',
+                fontWeight: '600',
+                borderLeft: '1px solid #57534e',
+                borderTop: '1px solid #57534e',
+                borderBottom: '1px solid #57534e',
+                borderRight: (m === Math.ceil(plazo / 4) - 1) ? '1px solid #57534e' : 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: '#f5f5f4'
+              }
+            }, 'Mes ' + (m + 1));
+          })
         )
       ),
       // Fila 2: SEMANAS dentro de cada mes
@@ -4346,7 +4425,11 @@ function CurvaInversion({
       label: 'S' + w,
       sem: w,
       Financiero: Number(pctF.toFixed(1)),
-      'Horas-hombre': Number(pctH.toFixed(1))
+      'Horas-hombre': Number(pctH.toFixed(1)),
+      montoAcum: avF,
+      hhAcum: avH,
+      totalF: totalF,
+      totalH: totalH
     });
   }
   return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
