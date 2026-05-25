@@ -3655,7 +3655,11 @@ function ObraView({
     className: "text-xs text-stone-400 mt-2"
   }, "Los \xEDtems se agrupan por rubro principal. INC % en la fila del rubro es la incidencia sobre el total de la obra; en la fila del \xEDtem, es la incidencia dentro de su rubro.")), mostrar('coef') && /*#__PURE__*/React.createElement("div", {
     className: "max-w-2xl seccion-informe"
-  }, /*#__PURE__*/React.createElement("p", {
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bg-amber-50 border-l-4 border-amber-500 rounded p-3 mb-3 text-sm text-stone-700"
+  }, /*#__PURE__*/React.createElement("div", { className: "font-semibold text-stone-800 mb-1" }, "IVA al final"),
+     /*#__PURE__*/React.createElement("div", null, "El c\xF3mputo trabaja siempre con precios ", /*#__PURE__*/React.createElement("strong", null, "sin IVA"), ". Si quer\xE9s aplicar IVA al precio final, cargalo como un porcentaje m\xE1s en el coeficiente (ej. agregalo a \"Imprevistos\" o como un margen extra) o calcul\xE1 sobre el precio de venta. Tu condici\xF3n de monotributo o responsable inscripto determina si lo tras\xEDad\xE1s al cliente.")),
+     /*#__PURE__*/React.createElement("p", {
     className: "text-sm text-stone-500 mb-3"
   }, "Carg\xE1 los porcentajes (n\xFAmero entero: para 15% escrib\xED 15). El coeficiente se calcula solo."), /*#__PURE__*/React.createElement("div", {
     className: "bg-white border border-stone-300 rounded overflow-hidden"
@@ -7030,6 +7034,74 @@ function Precios({ obra, setObra, cat }) {
     setObra(next);
   };
 
+  // ====== DOBLE COLUMNA IVA (Materiales + Equipos) ======
+  // El cómputo SIEMPRE usa precio sin IVA (obra.precios.materiales / .herramientas).
+  // La columna "con IVA" es UX para el arquitecto al cargar precios del proveedor.
+  // "Última editada manda": editar sin IVA -> calcula con IVA = sin * 1.21
+  //                         editar con IVA -> calcula sin IVA = con / 1.21
+  const IVA_RATE = 0.21;
+  const r2 = n => Math.round((Number(n) || 0) * 100) / 100;
+
+  const setPrecioSinIVA = (tipoKey, cod, val) => {
+    // tipoKey: 'materiales' o 'herramientas'
+    const next = { ...obra };
+    const prec = { ...(next.precios || {}) };
+    const sinKey = tipoKey;
+    const conKey = tipoKey + 'ConIVA';
+    const seccionSin = { ...(prec[sinKey] || {}) };
+    const seccionCon = { ...(prec[conKey] || {}) };
+    if (val === '' || val === null || val === undefined || (typeof val === 'string' && val.trim() === '')) {
+      delete seccionSin[cod];
+      delete seccionCon[cod];
+    } else {
+      const sinIva = Number(val) || 0;
+      seccionSin[cod] = sinIva;
+      seccionCon[cod] = r2(sinIva * (1 + IVA_RATE));
+    }
+    prec[sinKey] = seccionSin;
+    prec[conKey] = seccionCon;
+    next.precios = prec;
+    setObra(next);
+  };
+
+  const setPrecioConIVA = (tipoKey, cod, val) => {
+    const next = { ...obra };
+    const prec = { ...(next.precios || {}) };
+    const sinKey = tipoKey;
+    const conKey = tipoKey + 'ConIVA';
+    const seccionSin = { ...(prec[sinKey] || {}) };
+    const seccionCon = { ...(prec[conKey] || {}) };
+    if (val === '' || val === null || val === undefined || (typeof val === 'string' && val.trim() === '')) {
+      delete seccionSin[cod];
+      delete seccionCon[cod];
+    } else {
+      const conIva = Number(val) || 0;
+      seccionCon[cod] = conIva;
+      seccionSin[cod] = r2(conIva / (1 + IVA_RATE));
+    }
+    prec[sinKey] = seccionSin;
+    prec[conKey] = seccionCon;
+    next.precios = prec;
+    setObra(next);
+  };
+
+  // Devuelve el valor con IVA para mostrar en la celda editable.
+  // Si hay valor explícito guardado en *ConIVA, lo usa.
+  // Si solo hay valor sin IVA, calcula al vuelo (retrocompatibilidad).
+  // Si no hay ninguno, devuelve string vacío.
+  const getValorConIVA = (tipoKey, cod) => {
+    const prec = obra.precios || {};
+    const conMap = prec[tipoKey + 'ConIVA'] || {};
+    if (cod in conMap && conMap[cod] !== '' && conMap[cod] !== null && conMap[cod] !== undefined) {
+      return conMap[cod];
+    }
+    const sinMap = prec[tipoKey] || {};
+    if (cod in sinMap && sinMap[cod] !== '' && sinMap[cod] !== null && sinMap[cod] !== undefined) {
+      return r2((Number(sinMap[cod]) || 0) * (1 + IVA_RATE));
+    }
+    return '';
+  };
+
   const setProveedor = (tipoKey, cod, val) => {
     const next = { ...obra };
     const prov = { ...(next.proveedores || {}) };
@@ -7101,12 +7173,13 @@ function Precios({ obra, setObra, cat }) {
             e('th', { className: th }, 'Descripción'),
             e('th', { className: th + ' text-right' }, 'Unidad'),
             e('th', { className: th + ' text-right' }, 'Precio genérico'),
-            e('th', { className: th + ' text-right' }, 'Precio en esta obra'),
+            e('th', { className: th + ' text-right' }, 'Precio sin IVA'),
+            e('th', { className: th + ' text-right' }, 'Precio CON IVA (21%)'),
             e('th', { className: th + ' w-48' }, 'Proveedor')
           )),
           e('tbody', null, divsOrdenadas.map(divNombre => e(React.Fragment, { key: 'div-' + divNombre },
             e('tr', { className: divisionRowClass },
-              e('td', { className: td + ' font-semibold uppercase tracking-wide text-xs', colSpan: 6 }, divNombre)
+              e('td', { className: td + ' font-semibold uppercase tracking-wide text-xs', colSpan: 7 }, divNombre)
             ),
             grupos[divNombre].map(m => {
               const precioGenerico = Number(m.precio) || 0;
@@ -7124,7 +7197,15 @@ function Precios({ obra, setObra, cat }) {
                     value: tieneOverride ? overrideMap[m.cod] : '',
                     type: 'number',
                     align: 'right',
-                    onCommit: v => setOverride('materiales', m.cod, v)
+                    onCommit: v => setPrecioSinIVA('materiales', m.cod, v)
+                  })
+                ),
+                e('td', { className: td },
+                  e(EditCell, {
+                    value: getValorConIVA('materiales', m.cod),
+                    type: 'number',
+                    align: 'right',
+                    onCommit: v => setPrecioConIVA('materiales', m.cod, v)
                   })
                 ),
                 e('td', { className: td },
@@ -7251,7 +7332,8 @@ function Precios({ obra, setObra, cat }) {
           e('th', { className: th }, 'Descripción'),
           e('th', { className: th + ' text-right' }, 'Tenencia'),
           e('th', { className: th + ' text-right' }, 'Valor genérico'),
-          e('th', { className: th + ' text-right' }, 'Valor en esta obra'),
+          e('th', { className: th + ' text-right' }, 'Valor sin IVA'),
+          e('th', { className: th + ' text-right' }, 'Valor CON IVA (21%)'),
           e('th', { className: th + ' text-right' }, 'Costo/h'),
           e('th', { className: th + ' w-48' }, 'Proveedor')
         )),
@@ -7271,7 +7353,15 @@ function Precios({ obra, setObra, cat }) {
                 value: tieneOverride ? overrideMap[h.cod] : '',
                 type: 'number',
                 align: 'right',
-                onCommit: v => setOverride('herramientas', h.cod, v)
+                onCommit: v => setPrecioSinIVA('herramientas', h.cod, v)
+              })
+            ),
+            e('td', { className: td },
+              e(EditCell, {
+                value: getValorConIVA('herramientas', h.cod),
+                type: 'number',
+                align: 'right',
+                onCommit: v => setPrecioConIVA('herramientas', h.cod, v)
               })
             ),
             e('td', { className: td + ' text-right font-mono text-stone-700' }, costoH > 0 ? money(costoH) : '—'),
