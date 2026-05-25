@@ -6789,74 +6789,125 @@ function Precios({ obra, setObra, cat }) {
     return list.filter(item => fields.some(f => String(item[f] || '').toLowerCase().includes(qq)));
   };
 
+  // ---------- INSUMOS EN USO ----------
+  // Set de códigos de insumos que aparecen en APUs de items con cant > 0 en esta obra
+  const insumosEnUso = useMemo(() => {
+    const M = new Set(); const MO = new Set(); const EQ = new Set();
+    const apusComputados = new Set((obra.items || []).filter(it => Number(it.cant) > 0).map(it => it.cod));
+    (cat.biblioteca || []).forEach(b => {
+      if (apusComputados.has(b.apu)) {
+        if (b.tipo === 'M') M.add(b.insumo);
+        else if (b.tipo === 'MO') MO.add(b.insumo);
+        else if (b.tipo === 'E') EQ.add(b.insumo);
+      }
+    });
+    return { M, MO, EQ };
+  }, [obra.items, cat.biblioteca]);
+
+  const hayItemsComputados = (obra.items || []).some(it => Number(it.cant) > 0);
+
+  // Encabezado de bloque (EN USO vs Otros)
+  const seccionHeader = (titulo, color, cantidad, total) => e('div', {
+    className: 'flex items-center gap-2 px-3 py-2 mt-3 mb-1 rounded border-l-4 ' + (color === 'amber' ? 'bg-amber-50 border-amber-500' : 'bg-stone-50 border-stone-300')
+  },
+    e('span', { className: 'font-semibold text-stone-800 text-sm uppercase tracking-wide' }, titulo),
+    e('span', { className: 'text-xs text-stone-500' }, '·'),
+    e('span', { className: 'text-xs text-stone-600' }, cantidad + ' de ' + total + (cantidad !== total ? ' (filtrados)' : ''))
+  );
+
   // ---------- MATERIALES ----------
   const renderMateriales = () => {
-    const list = filtrar(cat.materiales || [], ['cod', 'desc', 'div']);
+    const listFull = filtrar(cat.materiales || [], ['cod', 'desc', 'div']);
     const overrideMap = oPrec.materiales || {};
     const proveedorMap = oProv.materiales || {};
-    // Agrupar por División
-    const grupos = {};
-    list.forEach(m => {
-      const div = (m.div || 'Sin división').trim() || 'Sin división';
-      if (!grupos[div]) grupos[div] = [];
-      grupos[div].push(m);
-    });
-    Object.keys(grupos).forEach(d => grupos[d].sort((x, y) => cmpCodigo(x.cod, y.cod)));
-    const divsOrdenadas = Object.keys(grupos).sort((a, b) => { const codA = (grupos[a][0] && grupos[a][0].cod) || ''; const codB = (grupos[b][0] && grupos[b][0].cod) || ''; return cmpCodigo(codA, codB); });
-    return e('div', { className: 'overflow-x-auto' },
-      e('table', { className: 'w-full text-sm' },
-        e('thead', null, e('tr', null,
-          e('th', { className: th }, 'Ítem'),
-          e('th', { className: th }, 'Descripción'),
-          e('th', { className: th + ' text-right' }, 'Unidad'),
-          e('th', { className: th + ' text-right' }, 'Precio genérico'),
-          e('th', { className: th + ' text-right' }, 'Precio en esta obra'),
-          e('th', { className: th + ' w-48' }, 'Proveedor')
-        )),
-        e('tbody', null, divsOrdenadas.map(divNombre => e(React.Fragment, { key: 'div-' + divNombre },
-          e('tr', { className: 'bg-stone-800 text-white' },
-            e('td', { className: td + ' font-semibold uppercase tracking-wide text-xs', colSpan: 6 }, divNombre)
-          ),
-          grupos[divNombre].map(m => {
-            const precioGenerico = Number(m.precio) || 0;
-            const tieneOverride = (m.cod in overrideMap);
-            const precioOverride = tieneOverride ? Number(overrideMap[m.cod]) : null;
-            const precioEfectivo = tieneOverride ? precioOverride : precioGenerico;
-            const proveedor = proveedorMap[m.cod] || '';
-            return e('tr', { key: m.cod, className: 'hover:bg-stone-50' },
-              e('td', { className: td + ' font-mono text-xs text-stone-600 pl-4' }, m.cod),
-              e('td', { className: td }, m.desc),
-              e('td', { className: td + ' text-right text-stone-500' }, m.unidad || ''),
-              e('td', { className: td + ' text-right font-mono text-xs text-stone-400' }, precioGenerico > 0 ? money(precioGenerico) : '—'),
-              e('td', { className: td + (precioEfectivo > 0 ? '' : ' bg-amber-50') },
-                e(EditCell, {
-                  value: tieneOverride ? overrideMap[m.cod] : '',
-                  type: 'number',
-                  align: 'right',
-                  onCommit: v => setOverride('materiales', m.cod, v)
-                })
-              ),
-              e('td', { className: td },
-                e(EditCell, {
-                  value: proveedor,
-                  placeholder: 'genérico',
-                  onCommit: v => setProveedor('materiales', m.cod, v)
-                })
-              )
-            );
-          })
-        )))
+
+    // Renderiza una tabla con agrupación por División
+    const renderTabla = (lista) => {
+      const grupos = {};
+      lista.forEach(m => {
+        const div = (m.div || 'Sin división').trim() || 'Sin división';
+        if (!grupos[div]) grupos[div] = [];
+        grupos[div].push(m);
+      });
+      Object.keys(grupos).forEach(d => grupos[d].sort((x, y) => cmpCodigo(x.cod, y.cod)));
+      const divsOrdenadas = Object.keys(grupos).sort((a, b) => { const codA = (grupos[a][0] && grupos[a][0].cod) || ''; const codB = (grupos[b][0] && grupos[b][0].cod) || ''; return cmpCodigo(codA, codB); });
+      return e('div', { className: 'overflow-x-auto' },
+        e('table', { className: 'w-full text-sm' },
+          e('thead', null, e('tr', null,
+            e('th', { className: th }, 'Ítem'),
+            e('th', { className: th }, 'Descripción'),
+            e('th', { className: th + ' text-right' }, 'Unidad'),
+            e('th', { className: th + ' text-right' }, 'Precio genérico'),
+            e('th', { className: th + ' text-right' }, 'Precio en esta obra'),
+            e('th', { className: th + ' w-48' }, 'Proveedor')
+          )),
+          e('tbody', null, divsOrdenadas.map(divNombre => e(React.Fragment, { key: 'div-' + divNombre },
+            e('tr', { className: 'bg-stone-800 text-white' },
+              e('td', { className: td + ' font-semibold uppercase tracking-wide text-xs', colSpan: 6 }, divNombre)
+            ),
+            grupos[divNombre].map(m => {
+              const precioGenerico = Number(m.precio) || 0;
+              const tieneOverride = (m.cod in overrideMap);
+              const precioOverride = tieneOverride ? Number(overrideMap[m.cod]) : null;
+              const precioEfectivo = tieneOverride ? precioOverride : precioGenerico;
+              const proveedor = proveedorMap[m.cod] || '';
+              return e('tr', { key: m.cod, className: 'hover:bg-stone-50' },
+                e('td', { className: td + ' font-mono text-xs text-stone-600 pl-4' }, m.cod),
+                e('td', { className: td }, m.desc),
+                e('td', { className: td + ' text-right text-stone-500' }, m.unidad || ''),
+                e('td', { className: td + ' text-right font-mono text-xs text-stone-400' }, precioGenerico > 0 ? money(precioGenerico) : '—'),
+                e('td', { className: td + (precioEfectivo > 0 ? '' : ' bg-amber-50') },
+                  e(EditCell, {
+                    value: tieneOverride ? overrideMap[m.cod] : '',
+                    type: 'number',
+                    align: 'right',
+                    onCommit: v => setOverride('materiales', m.cod, v)
+                  })
+                ),
+                e('td', { className: td },
+                  e(EditCell, {
+                    value: proveedor,
+                    placeholder: 'genérico',
+                    onCommit: v => setProveedor('materiales', m.cod, v)
+                  })
+                )
+              );
+            })
+          )))
+        )
+      );
+    };
+
+    const enUso = listFull.filter(m => insumosEnUso.M.has(m.cod));
+    const otros = listFull.filter(m => !insumosEnUso.M.has(m.cod));
+    const totalEnUsoSinFiltro = insumosEnUso.M.size;
+    const totalOtrosSinFiltro = (cat.materiales || []).length - totalEnUsoSinFiltro;
+
+    if ((cat.materiales || []).length === 0) {
+      return e('div', { className: 'text-sm text-stone-400 italic p-4 text-center' }, 'No hay materiales en el catálogo.');
+    }
+
+    return e('div', null,
+      !hayItemsComputados && e('div', { className: 'text-sm text-stone-500 italic p-3 bg-stone-50 rounded border border-stone-200 mb-2' },
+        'Esta obra todavía no tiene ítems con cómputo. Cargá cantidades en la planilla para que aparezcan los materiales en uso acá arriba.'
       ),
-      list.length === 0 && e('div', { className: 'text-sm text-stone-400 italic p-4 text-center' }, 'No hay materiales en el catálogo.')
+      hayItemsComputados && totalEnUsoSinFiltro > 0 && seccionHeader('EN USO en esta obra', 'amber', enUso.length, totalEnUsoSinFiltro),
+      hayItemsComputados && enUso.length > 0 && renderTabla(enUso),
+      hayItemsComputados && totalEnUsoSinFiltro > 0 && enUso.length === 0 && e('div', { className: 'text-xs text-stone-400 italic p-2' },
+        'Ningún material en uso coincide con la búsqueda.'
+      ),
+      seccionHeader('Otros materiales', 'gris', otros.length, totalOtrosSinFiltro),
+      otros.length > 0 ? renderTabla(otros) : e('div', { className: 'text-sm text-stone-400 italic p-4 text-center' }, 'Ningún otro material coincide con la búsqueda.')
     );
   };
 
   // ---------- MANO DE OBRA ----------
   const renderManoObra = () => {
-    const list = filtrar(cat.manoObra || [], ['cod', 'desc']).sort((a, b) => cmpCodigo(a.cod, b.cod));
+    const listFull = filtrar(cat.manoObra || [], ['cod', 'desc']).sort((a, b) => cmpCodigo(a.cod, b.cod));
     const overrideMap = oPrec.manoObra || {};
     const proveedorMap = oProv.manoObra || {};
-    return e('div', { className: 'overflow-x-auto' },
+
+    const renderTabla = (lista) => e('div', { className: 'overflow-x-auto' },
       e('table', { className: 'w-full text-sm' },
         e('thead', null, e('tr', null,
           e('th', { className: th }, 'Ítem'),
@@ -6866,7 +6917,7 @@ function Precios({ obra, setObra, cat }) {
           e('th', { className: th + ' text-right' }, 'Valor en esta obra'),
           e('th', { className: th + ' w-48' }, 'Contratista')
         )),
-        e('tbody', null, list.map(mo => {
+        e('tbody', null, lista.map(mo => {
           const valorGenerico = Number(mo.valor) || 0;
           const tieneOverride = (mo.cod in overrideMap);
           const valorOverride = tieneOverride ? Number(overrideMap[mo.cod]) : null;
@@ -6894,65 +6945,106 @@ function Precios({ obra, setObra, cat }) {
             )
           );
         }))
+      )
+    );
+
+    const enUso = listFull.filter(mo => insumosEnUso.MO.has(mo.cod));
+    const otros = listFull.filter(mo => !insumosEnUso.MO.has(mo.cod));
+    const totalEnUsoSinFiltro = insumosEnUso.MO.size;
+    const totalOtrosSinFiltro = (cat.manoObra || []).length - totalEnUsoSinFiltro;
+
+    if ((cat.manoObra || []).length === 0) {
+      return e('div', { className: 'text-sm text-stone-400 italic p-4 text-center' }, 'No hay mano de obra en el catálogo.');
+    }
+
+    return e('div', null,
+      !hayItemsComputados && e('div', { className: 'text-sm text-stone-500 italic p-3 bg-stone-50 rounded border border-stone-200 mb-2' },
+        'Esta obra todavía no tiene ítems con cómputo. Cargá cantidades en la planilla para que aparezca la mano de obra en uso acá arriba.'
       ),
-      list.length === 0 && e('div', { className: 'text-sm text-stone-400 italic p-4 text-center' }, 'No hay mano de obra en el catálogo.')
+      hayItemsComputados && totalEnUsoSinFiltro > 0 && seccionHeader('EN USO en esta obra', 'amber', enUso.length, totalEnUsoSinFiltro),
+      hayItemsComputados && enUso.length > 0 && renderTabla(enUso),
+      hayItemsComputados && totalEnUsoSinFiltro > 0 && enUso.length === 0 && e('div', { className: 'text-xs text-stone-400 italic p-2' },
+        'Ninguna mano de obra en uso coincide con la búsqueda.'
+      ),
+      seccionHeader('Otras categorías de mano de obra', 'gris', otros.length, totalOtrosSinFiltro),
+      otros.length > 0 ? renderTabla(otros) : e('div', { className: 'text-sm text-stone-400 italic p-4 text-center' }, 'Ninguna otra mano de obra coincide con la búsqueda.')
     );
   };
 
   // ---------- HERRAMIENTAS / EQUIPOS ----------
   const renderHerramientas = () => {
-    const list = filtrar(cat.herramientas || [], ['cod', 'desc']).sort((a, b) => cmpCodigo(a.cod, b.cod));
+    const listFull = filtrar(cat.herramientas || [], ['cod', 'desc']).sort((a, b) => cmpCodigo(a.cod, b.cod));
     const overrideMap = oPrec.herramientas || {};
     const proveedorMap = oProv.herramientas || {};
+
+    const renderTabla = (lista) => e('div', { className: 'overflow-x-auto' },
+      e('table', { className: 'w-full text-sm' },
+        e('thead', null, e('tr', null,
+          e('th', { className: th }, 'Ítem'),
+          e('th', { className: th }, 'Descripción'),
+          e('th', { className: th + ' text-right' }, 'Tenencia'),
+          e('th', { className: th + ' text-right' }, 'Valor genérico'),
+          e('th', { className: th + ' text-right' }, 'Valor en esta obra'),
+          e('th', { className: th + ' text-right' }, 'Costo/h'),
+          e('th', { className: th + ' w-48' }, 'Proveedor')
+        )),
+        e('tbody', null, lista.map(h => {
+          const valorGenerico = Number(h.valor) || 0;
+          const tieneOverride = (h.cod in overrideMap);
+          const hParaCalculo = tieneOverride ? { ...h, valor: Number(overrideMap[h.cod]) || 0 } : h;
+          const costoH = costoHerramienta(hParaCalculo);
+          const proveedor = proveedorMap[h.cod] || '';
+          return e('tr', { key: h.cod, className: 'hover:bg-stone-50' },
+            e('td', { className: td + ' font-mono text-xs text-stone-600' }, h.cod),
+            e('td', { className: td }, h.desc),
+            e('td', { className: td + ' text-right text-stone-500 text-xs' }, h.tenencia || '—'),
+            e('td', { className: td + ' text-right font-mono text-xs text-stone-400' }, valorGenerico > 0 ? money(valorGenerico) : '—'),
+            e('td', { className: td },
+              e(EditCell, {
+                value: tieneOverride ? overrideMap[h.cod] : '',
+                type: 'number',
+                align: 'right',
+                onCommit: v => setOverride('herramientas', h.cod, v)
+              })
+            ),
+            e('td', { className: td + ' text-right font-mono text-stone-700' }, costoH > 0 ? money(costoH) : '—'),
+            e('td', { className: td },
+              e(EditCell, {
+                value: proveedor,
+                placeholder: 'genérico',
+                onCommit: v => setProveedor('herramientas', h.cod, v)
+              })
+            )
+          );
+        }))
+      )
+    );
+
+    const enUso = listFull.filter(h => insumosEnUso.EQ.has(h.cod));
+    const otros = listFull.filter(h => !insumosEnUso.EQ.has(h.cod));
+    const totalEnUsoSinFiltro = insumosEnUso.EQ.size;
+    const totalOtrosSinFiltro = (cat.herramientas || []).length - totalEnUsoSinFiltro;
+
+    if ((cat.herramientas || []).length === 0) {
+      return e('div', { className: 'text-sm text-stone-400 italic p-4 text-center' }, 'No hay equipos en el catálogo.');
+    }
+
     return e('div', null,
       e('div', { className: 'text-xs text-stone-500 mb-3' },
         'Se sobrescribe sólo el ',
         e('span', { className: 'font-medium' }, 'valor'),
         ' del equipo (precio de compra si es propio, tarifa por jornada si es alquilado). El resto de los campos (vida útil, combustible, reparaciones) sigue siendo genérico.'
       ),
-      e('div', { className: 'overflow-x-auto' },
-        e('table', { className: 'w-full text-sm' },
-          e('thead', null, e('tr', null,
-            e('th', { className: th }, 'Ítem'),
-            e('th', { className: th }, 'Descripción'),
-            e('th', { className: th + ' text-right' }, 'Tenencia'),
-            e('th', { className: th + ' text-right' }, 'Valor genérico'),
-            e('th', { className: th + ' text-right' }, 'Valor en esta obra'),
-            e('th', { className: th + ' text-right' }, 'Costo/h'),
-            e('th', { className: th + ' w-48' }, 'Proveedor')
-          )),
-          e('tbody', null, list.map(h => {
-            const valorGenerico = Number(h.valor) || 0;
-            const tieneOverride = (h.cod in overrideMap);
-            const hParaCalculo = tieneOverride ? { ...h, valor: Number(overrideMap[h.cod]) || 0 } : h;
-            const costoH = costoHerramienta(hParaCalculo);
-            const proveedor = proveedorMap[h.cod] || '';
-            return e('tr', { key: h.cod, className: 'hover:bg-stone-50' },
-              e('td', { className: td + ' font-mono text-xs text-stone-600' }, h.cod),
-              e('td', { className: td }, h.desc),
-              e('td', { className: td + ' text-right text-stone-500 text-xs' }, h.tenencia || '—'),
-              e('td', { className: td + ' text-right font-mono text-xs text-stone-400' }, valorGenerico > 0 ? money(valorGenerico) : '—'),
-              e('td', { className: td },
-                e(EditCell, {
-                  value: tieneOverride ? overrideMap[h.cod] : '',
-                  type: 'number',
-                  align: 'right',
-                  onCommit: v => setOverride('herramientas', h.cod, v)
-                })
-              ),
-              e('td', { className: td + ' text-right font-mono text-stone-700' }, costoH > 0 ? money(costoH) : '—'),
-              e('td', { className: td },
-                e(EditCell, {
-                  value: proveedor,
-                  placeholder: 'genérico',
-                  onCommit: v => setProveedor('herramientas', h.cod, v)
-                })
-              )
-            );
-          }))
-        )
+      !hayItemsComputados && e('div', { className: 'text-sm text-stone-500 italic p-3 bg-stone-50 rounded border border-stone-200 mb-2' },
+        'Esta obra todavía no tiene ítems con cómputo. Cargá cantidades en la planilla para que aparezcan los equipos en uso acá arriba.'
       ),
-      list.length === 0 && e('div', { className: 'text-sm text-stone-400 italic p-4 text-center' }, 'No hay equipos en el catálogo.')
+      hayItemsComputados && totalEnUsoSinFiltro > 0 && seccionHeader('EN USO en esta obra', 'amber', enUso.length, totalEnUsoSinFiltro),
+      hayItemsComputados && enUso.length > 0 && renderTabla(enUso),
+      hayItemsComputados && totalEnUsoSinFiltro > 0 && enUso.length === 0 && e('div', { className: 'text-xs text-stone-400 italic p-2' },
+        'Ningún equipo en uso coincide con la búsqueda.'
+      ),
+      seccionHeader('Otros equipos', 'gris', otros.length, totalOtrosSinFiltro),
+      otros.length > 0 ? renderTabla(otros) : e('div', { className: 'text-sm text-stone-400 italic p-4 text-center' }, 'Ningún otro equipo coincide con la búsqueda.')
     );
   };
 
