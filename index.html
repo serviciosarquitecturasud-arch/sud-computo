@@ -2222,9 +2222,20 @@ function ManoObra({
     className: td + ' font-mono text-xs text-stone-600'
   }, o.cod), /*#__PURE__*/React.createElement("td", {
     className: td
-  }, o.desc), /*#__PURE__*/React.createElement("td", {
-    className: td + ' text-stone-500'
-  }, o.unidad), /*#__PURE__*/React.createElement("td", {
+  }, /*#__PURE__*/React.createElement(EditCell, {
+    value: o.desc,
+    onCommit: v => upd(o.cod, {
+      desc: v
+    })
+  })), /*#__PURE__*/React.createElement("td", {
+    className: td
+  }, /*#__PURE__*/React.createElement("select", {
+    value: o.unidad || 'hs',
+    onChange: e => upd(o.cod, {
+      unidad: e.target.value
+    }),
+    className: "w-full bg-transparent text-sm py-1 outline-none"
+  }, /*#__PURE__*/React.createElement("option", null, "hs"), /*#__PURE__*/React.createElement("option", null, "Gl"), /*#__PURE__*/React.createElement("option", null, "U"), /*#__PURE__*/React.createElement("option", null, "un"))), /*#__PURE__*/React.createElement("td", {
     className: td + (o.valor > 0 ? '' : ' bg-amber-50')
   }, /*#__PURE__*/React.createElement(EditCell, {
     value: o.valor,
