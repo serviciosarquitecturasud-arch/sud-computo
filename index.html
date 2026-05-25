@@ -2091,8 +2091,8 @@ function Materiales({
     className: th + ' w-20'
   }, "Factor"), /*#__PURE__*/React.createElement("th", {
     className: th + ' w-10'
-  }))), /*#__PURE__*/React.createElement("tbody", null, list.map(m => /*#__PURE__*/React.createElement("tr", {
-    key: m.cod,
+  }))), /*#__PURE__*/React.createElement("tbody", null, list.map((m, i) => /*#__PURE__*/React.createElement("tr", {
+    key: m.cod + '#' + i,
     className: "hover:bg-stone-50"
   }, /*#__PURE__*/React.createElement("td", {
     className: td + ' font-mono text-xs text-stone-600'
@@ -2215,8 +2215,8 @@ function ManoObra({
     className: th + ' w-40'
   }, "Valor en APU (ARS)"), /*#__PURE__*/React.createElement("th", {
     className: th + ' w-10'
-  }))), /*#__PURE__*/React.createElement("tbody", null, [...cat.manoObra].sort((a, b) => cmpCodigo(a.cod, b.cod)).map(o => /*#__PURE__*/React.createElement("tr", {
-    key: o.cod,
+  }))), /*#__PURE__*/React.createElement("tbody", null, [...cat.manoObra].sort((a, b) => cmpCodigo(a.cod, b.cod)).map((o, i) => /*#__PURE__*/React.createElement("tr", {
+    key: o.cod + '#' + i,
     className: "hover:bg-stone-50"
   }, /*#__PURE__*/React.createElement("td", {
     className: td + ' font-mono text-xs text-stone-600'
@@ -2302,8 +2302,8 @@ function Equipos({
     className: th + ' w-28'
   }, "Costo horario"), /*#__PURE__*/React.createElement("th", {
     className: th + ' w-10'
-  }))), /*#__PURE__*/React.createElement("tbody", null, [...cat.herramientas].sort((a, b) => cmpCodigo(a.cod, b.cod)).map(h => /*#__PURE__*/React.createElement("tr", {
-    key: h.cod,
+  }))), /*#__PURE__*/React.createElement("tbody", null, [...cat.herramientas].sort((a, b) => cmpCodigo(a.cod, b.cod)).map((h, i) => /*#__PURE__*/React.createElement("tr", {
+    key: h.cod + '#' + i,
     className: "hover:bg-stone-50"
   }, /*#__PURE__*/React.createElement("td", {
     className: td + ' font-mono text-xs text-stone-600'
@@ -5138,7 +5138,7 @@ function Respaldo({
     });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'computo_respaldo_' + new Date().toISOString().slice(0, 10) + '.json';
+    a.download = 'computo_respaldo_' + new Date().toISOString().slice(0, 16).replace('T', '_').replace(':', '-') + '.json';
     a.click();
   };
   const importar = ev => {
@@ -6790,7 +6790,8 @@ function Precios({ obra, setObra, cat }) {
       if (!grupos[div]) grupos[div] = [];
       grupos[div].push(m);
     });
-    const divsOrdenadas = Object.keys(grupos).sort((a, b) => a.localeCompare(b, 'es'));
+    Object.keys(grupos).forEach(d => grupos[d].sort((x, y) => cmpCodigo(x.cod, y.cod)));
+    const divsOrdenadas = Object.keys(grupos).sort((a, b) => { const codA = (grupos[a][0] && grupos[a][0].cod) || ''; const codB = (grupos[b][0] && grupos[b][0].cod) || ''; return cmpCodigo(codA, codB); });
     return e('div', { className: 'overflow-x-auto' },
       e('table', { className: 'w-full text-sm' },
         e('thead', null, e('tr', null,
@@ -6841,7 +6842,7 @@ function Precios({ obra, setObra, cat }) {
 
   // ---------- MANO DE OBRA ----------
   const renderManoObra = () => {
-    const list = filtrar(cat.manoObra || [], ['cod', 'desc']);
+    const list = filtrar(cat.manoObra || [], ['cod', 'desc']).sort((a, b) => cmpCodigo(a.cod, b.cod));
     const overrideMap = oPrec.manoObra || {};
     const proveedorMap = oProv.manoObra || {};
     return e('div', { className: 'overflow-x-auto' },
@@ -6889,7 +6890,7 @@ function Precios({ obra, setObra, cat }) {
 
   // ---------- HERRAMIENTAS / EQUIPOS ----------
   const renderHerramientas = () => {
-    const list = filtrar(cat.herramientas || [], ['cod', 'desc']);
+    const list = filtrar(cat.herramientas || [], ['cod', 'desc']).sort((a, b) => cmpCodigo(a.cod, b.cod));
     const overrideMap = oPrec.herramientas || {};
     const proveedorMap = oProv.herramientas || {};
     return e('div', null,
