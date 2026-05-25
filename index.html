@@ -2393,71 +2393,212 @@ function Equipos({
 /* ============================ CATÁLOGO: RUBROS ============================ */
 function Rubros({
   cat,
-  setCat
+  setCat,
+  obras,
+  setObras
 }) {
+  const e = React.createElement;
   const [q, setQ] = useState('');
   const list = useMemo(() => cat.rubros.filter(r => !q || (r.cod + ' ' + r.desc + ' ' + r.rubro).toLowerCase().includes(q.toLowerCase())).sort((a, b) => cmpCodigo(a.cod, b.cod)), [cat.rubros, q]);
+
   const add = () => {
     const cod = prompt('C\xF3digo del nuevo rubro / sub\xEDtem (ej "1.10" o "4.02.08"):');
-    if (!cod) return;
-    if (cat.rubros.some(r => r.cod === cod)) { alert('Ya existe ese c\xF3digo.'); return; }
-    const desc = prompt('Descripci\xF3n:') || '';
-    const unidad = prompt('Unidad (m\xB2, m\xB3, ml, U, kg, Gl, ...):') || '';
-    const padre = cod.split('.')[0] + '.00';
+    if (cod === null) return; // Cancel
+    const codCleaned = (cod || '').trim();
+    if (!codCleaned) { alert('El c\xF3digo no puede estar vac\xEDo.'); return; }
+    if (cat.rubros.some(r => r.cod === codCleaned)) { alert('Ya existe ese c\xF3digo.'); return; }
+
+    const desc = prompt('Descripci\xF3n del rubro "' + codCleaned + '":');
+    if (desc === null) return; // Cancel → no crea nada
+    const descCleaned = (desc || '').trim();
+    if (!descCleaned) { alert('La descripci\xF3n no puede estar vac\xEDa.'); return; }
+
+    const unidad = prompt('Unidad (m\xB2, m\xB3, ml, U, kg, Gl, ...). Dej\xE1 vac\xEDo si es rubro padre .00:');
+    if (unidad === null) return; // Cancel → no crea nada
+    const unidadCleaned = (unidad || '').trim();
+
+    const padre = codCleaned.split('.')[0] + '.00';
     const padreObj = cat.rubros.find(r => r.cod === padre);
     const rubroPadre = padreObj ? padreObj.desc : '';
-    setCat(c => ({ ...c, rubros: [...c.rubros, { cod, rubro: rubroPadre, subrubro: '', desc, unidad }] }));
+    setCat(c => ({ ...c, rubros: [...c.rubros, { cod: codCleaned, rubro: rubroPadre, subrubro: '', desc: descCleaned, unidad: unidadCleaned }] }));
   };
-  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(SectionTitle, {
-    sub: `${cat.rubros.length} líneas · estructura maestra de rubros e ítems.`
-  }, "Rubros"), /*#__PURE__*/React.createElement("div", {
-    className: "mb-3 flex items-center gap-3"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "relative"
-  }, /*#__PURE__*/React.createElement(Search, {
-    size: 15,
-    className: "absolute left-2 top-2.5 text-stone-400"
-  }), /*#__PURE__*/React.createElement("input", {
-    value: q,
-    onChange: e => setQ(e.target.value),
-    placeholder: "Buscar rubro o \xEDtem",
-    className: "pl-8 pr-3 py-2 text-sm border border-stone-300 rounded w-72 outline-none focus:border-amber-600"
-  })), /*#__PURE__*/React.createElement("div", {
-    className: "ml-auto"
-  }, /*#__PURE__*/React.createElement(Btn, {
-    onClick: add,
-    sm: true
-  }, /*#__PURE__*/React.createElement(Plus, { size: 14 }), "Rubro / \xEDtem"))), /*#__PURE__*/React.createElement("div", {
-    className: "bg-white border border-stone-300 rounded overflow-x-auto"
-  }, /*#__PURE__*/React.createElement("table", {
-    className: "w-full text-sm"
-  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", {
-    className: th + ' w-24'
-  }, "C\xF3digo"), /*#__PURE__*/React.createElement("th", {
-    className: th + ' w-48'
-  }, "Rubro"), /*#__PURE__*/React.createElement("th", {
-    className: th + ' w-48'
-  }, "Subrubro"), /*#__PURE__*/React.createElement("th", {
-    className: th
-  }, "Descripci\xF3n"), /*#__PURE__*/React.createElement("th", {
-    className: th + ' w-16'
-  }, "Unidad"))), /*#__PURE__*/React.createElement("tbody", null, list.map((r, i) => {
-    const esRubro = r.cod.endsWith('.00');
-    return /*#__PURE__*/React.createElement("tr", {
-      key: i,
-      className: esRubro ? 'bg-stone-800 text-white' : 'hover:bg-stone-50'
-    }, /*#__PURE__*/React.createElement("td", {
-      className: td + (esRubro ? ' font-mono text-xs font-semibold' : ' font-mono text-xs text-stone-600 pl-4')
-    }, r.cod), /*#__PURE__*/React.createElement("td", {
-      className: td + (esRubro ? ' font-semibold uppercase tracking-wide text-xs' : ' text-xs text-stone-500')
-    }, esRubro ? r.desc : r.rubro), /*#__PURE__*/React.createElement("td", {
-      className: td + ' text-xs ' + (esRubro ? '' : 'text-stone-500')
-    }, esRubro ? '' : r.subrubro), /*#__PURE__*/React.createElement("td", {
-      className: td
-    }, esRubro ? '' : r.desc), /*#__PURE__*/React.createElement("td", {
-      className: td + (esRubro ? '' : ' text-stone-500')
-    }, r.unidad));
-  })))));
+
+  // Actualiza UN campo del rubro (edición inline)
+  // Si se edita la descripción de un rubro padre (X.00), propaga el cambio al campo "rubro" de todos sus hijos.
+  const updateRubro = (cod, patch) => {
+    setCat(c => {
+      const next = c.rubros.map(r => r.cod === cod ? { ...r, ...patch } : r);
+      // Si cambió la descripción de un padre X.00, propagar a hijos
+      if (cod.endsWith('.00') && 'desc' in patch) {
+        const padrePrefix = cod.split('.')[0] + '.';
+        const nuevoNombre = patch.desc;
+        return {
+          ...c,
+          rubros: next.map(r =>
+            (r.cod !== cod && r.cod.startsWith(padrePrefix) && !r.cod.endsWith('.00'))
+              ? { ...r, rubro: nuevoNombre }
+              : r
+          )
+        };
+      }
+      return { ...c, rubros: next };
+    });
+  };
+
+  // Elimina un rubro con todas las validaciones de seguridad
+  const deleteRubro = (cod) => {
+    // 1. Verificar uso en obras
+    const enUso = []; // {obraNombre, cant}
+    (obras || []).forEach(o => {
+      (o.items || []).forEach(it => {
+        if (it.cod === cod) {
+          enUso.push({ obraNombre: o.nombre || 'sin nombre', cant: Number(it.cant) || 0 });
+        }
+      });
+    });
+    const conCantidad = enUso.filter(u => u.cant > 0);
+    const conCero = enUso.filter(u => u.cant === 0);
+
+    if (conCantidad.length > 0) {
+      alert(
+        'No se puede eliminar "' + cod + '".\n\n' +
+        'Est\xE1 cargado con cantidad > 0 en ' + conCantidad.length + ' obra(s):\n' +
+        conCantidad.map(u => '  \u2022 ' + u.obraNombre + ' (cant=' + u.cant + ')').join('\n') +
+        '\n\nPon\xE9 las cantidades en 0 o elimin\xE1 los \xEDtems en esas obras antes de borrar el rubro del cat\xE1logo.'
+      );
+      return;
+    }
+
+    // 2. Si es un rubro padre (.00), verificar que no tenga hijos
+    if (cod.endsWith('.00')) {
+      const padrePrefix = cod.split('.')[0] + '.';
+      const hijos = cat.rubros.filter(r => r.cod !== cod && r.cod.startsWith(padrePrefix));
+      if (hijos.length > 0) {
+        alert(
+          'No se puede eliminar "' + cod + '".\n\n' +
+          'Es un rubro padre con ' + hijos.length + ' sub\xEDtem(s):\n' +
+          hijos.slice(0, 8).map(h => '  \u2022 ' + h.cod + ' ' + h.desc).join('\n') +
+          (hijos.length > 8 ? '\n  \u2026 y ' + (hijos.length - 8) + ' m\xE1s' : '') +
+          '\n\nElimin\xE1 primero todos los sub\xEDtems.'
+        );
+        return;
+      }
+    }
+
+    // 3. Verificar APU asociado
+    const insumosAPU = cat.biblioteca.filter(b => b.apu === cod).length;
+    const yaEliminadoEnPapelera = Array.isArray(cat.deletedApus) && cat.deletedApus.includes(cod);
+
+    // 4. Confirmar
+    const lineas = ['Eliminar rubro "' + cod + '"?', ''];
+    if (conCero.length > 0) {
+      lineas.push('\u2022 Se quitar\xE1 de ' + conCero.length + ' obra(s) donde est\xE1 con cant=0');
+    }
+    if (insumosAPU > 0) {
+      lineas.push('\u2022 Se eliminar\xE1 el APU asociado (' + insumosAPU + ' insumo' + (insumosAPU === 1 ? '' : 's') + ' cargados)');
+    }
+    if (yaEliminadoEnPapelera) {
+      lineas.push('\u2022 Se sacar\xE1 de la papelera de APUs eliminados');
+    }
+    lineas.push('');
+    lineas.push('Esta acci\xF3n no se puede deshacer.');
+    if (!confirm(lineas.join('\n'))) return;
+
+    // 5. Eliminar del catálogo (rubros + biblioteca + deletedApus)
+    setCat(c => ({
+      ...c,
+      rubros: c.rubros.filter(r => r.cod !== cod),
+      biblioteca: c.biblioteca.filter(b => b.apu !== cod),
+      deletedApus: Array.isArray(c.deletedApus) ? c.deletedApus.filter(x => x !== cod) : []
+    }));
+
+    // 6. Limpiar items vacíos en obras
+    if (conCero.length > 0) {
+      setObras(prev => prev.map(o => ({
+        ...o,
+        items: (o.items || []).filter(it => it.cod !== cod)
+      })));
+    }
+  };
+
+  return e('div', null,
+    e(SectionTitle, { sub: cat.rubros.length + ' l\xEDneas \xB7 estructura maestra de rubros e \xEDtems. Edit\xE1 cualquier celda haciendo click.' }, 'Rubros'),
+    e('div', { className: 'mb-3 flex items-center gap-3' },
+      e('div', { className: 'relative' },
+        e(Search, { size: 15, className: 'absolute left-2 top-2.5 text-stone-400' }),
+        e('input', {
+          value: q,
+          onChange: ev => setQ(ev.target.value),
+          placeholder: 'Buscar rubro o \xEDtem',
+          className: 'pl-8 pr-3 py-2 text-sm border border-stone-300 rounded w-72 outline-none focus:border-amber-600'
+        })
+      ),
+      e('div', { className: 'ml-auto' },
+        e(Btn, { onClick: add, sm: true }, e(Plus, { size: 14 }), 'Rubro / \xEDtem')
+      )
+    ),
+    e('div', { className: 'bg-white border border-stone-300 rounded overflow-x-auto' },
+      e('table', { className: 'w-full text-sm' },
+        e('thead', null, e('tr', null,
+          e('th', { className: th + ' w-24' }, 'C\xF3digo'),
+          e('th', { className: th + ' w-48' }, 'Rubro'),
+          e('th', { className: th + ' w-48' }, 'Subrubro'),
+          e('th', { className: th }, 'Descripci\xF3n'),
+          e('th', { className: th + ' w-20' }, 'Unidad'),
+          e('th', { className: th + ' w-10' }, '')
+        )),
+        e('tbody', null, list.map((r) => {
+          const esRubro = r.cod.endsWith('.00');
+          return e('tr', {
+            key: r.cod,
+            className: esRubro ? 'bg-stone-800 text-white' : 'hover:bg-stone-50'
+          },
+            // Código (no editable: es identificador)
+            e('td', { className: td + (esRubro ? ' font-mono text-xs font-semibold' : ' font-mono text-xs text-stone-600 pl-4') }, r.cod),
+            // Rubro padre (en filas .00: la descripción del propio rubro = se edita en col Descripción; en filas hijas: el nombre del padre, NO editable porque viene heredado)
+            e('td', { className: td + (esRubro ? ' font-semibold uppercase tracking-wide text-xs' : ' text-xs text-stone-500') },
+              esRubro ? r.desc : r.rubro
+            ),
+            // Subrubro (editable solo en filas hijas)
+            e('td', { className: td + ' text-xs ' + (esRubro ? '' : 'text-stone-500') },
+              esRubro ? '' : e(EditCell, {
+                value: r.subrubro || '',
+                placeholder: '\u2014',
+                onCommit: v => updateRubro(r.cod, { subrubro: (v || '').trim() })
+              })
+            ),
+            // Descripción (editable en ambos casos)
+            e('td', { className: td },
+              e(EditCell, {
+                value: r.desc || '',
+                onCommit: v => {
+                  const nuevoDesc = (v || '').trim();
+                  if (nuevoDesc === '') { alert('La descripci\xF3n no puede quedar vac\xEDa.'); return; }
+                  updateRubro(r.cod, { desc: nuevoDesc });
+                }
+              })
+            ),
+            // Unidad (editable solo en filas hijas)
+            e('td', { className: td + (esRubro ? '' : ' text-stone-500') },
+              esRubro ? '' : e(EditCell, {
+                value: r.unidad || '',
+                placeholder: '\u2014',
+                onCommit: v => updateRubro(r.cod, { unidad: (v || '').trim() })
+              })
+            ),
+            // Botón eliminar
+            e('td', { className: td + ' text-center' },
+              e('button', {
+                onClick: () => deleteRubro(r.cod),
+                className: (esRubro ? 'text-stone-400 hover:text-red-300' : 'text-stone-300 hover:text-red-600'),
+                title: 'Eliminar rubro'
+              }, e(Trash2, { size: 14 }))
+            )
+          );
+        }))
+      )
+    )
+  );
 }
 
 /* ============================ CATÁLOGO: APUs ============================ */
@@ -2489,34 +2630,41 @@ function APUs({
   const rub = motor.rubMap[sel];
   const addApu = () => {
     const cod = prompt('C\xF3digo del nuevo APU (debe coincidir con un rubro existente o crear uno nuevo, ej "1.10", "4.02.08"):');
-    if (!cod) return;
-    if (apuCods.includes(cod)) {
+    if (cod === null) return; // Cancel
+    const codCleaned = (cod || '').trim();
+    if (!codCleaned) { alert('El c\xF3digo no puede estar vac\xEDo.'); return; }
+    if (apuCods.includes(codCleaned)) {
       alert('Ya existe un APU con ese c\xF3digo. Lo selecciono para que lo edites.');
-      setSel(cod);
+      setSel(codCleaned);
       return;
     }
-    if (!cat.rubros.some(r => r.cod === cod)) {
-      const crear = confirm('No existe un rubro con c\xF3digo "' + cod + '". \xBFCrearlo tambi\xE9n en el cat\xE1logo de rubros?');
+    if (!cat.rubros.some(r => r.cod === codCleaned)) {
+      const crear = confirm('No existe un rubro con c\xF3digo "' + codCleaned + '". \xBFCrearlo tambi\xE9n en el cat\xE1logo de rubros?');
       if (!crear) return;
-      const desc = prompt('Descripci\xF3n del rubro:') || '';
-      const unidad = prompt('Unidad (m\xB2, m\xB3, ml, U, kg, Gl, ...):') || '';
-      const padre = cod.split('.')[0] + '.00';
+      const desc = prompt('Descripci\xF3n del rubro "' + codCleaned + '":');
+      if (desc === null) return; // Cancel → aborta todo
+      const descCleaned = (desc || '').trim();
+      if (!descCleaned) { alert('La descripci\xF3n no puede estar vac\xEDa.'); return; }
+      const unidad = prompt('Unidad (m\xB2, m\xB3, ml, U, kg, Gl, ...). Dej\xE1 vac\xEDo si es rubro padre .00:');
+      if (unidad === null) return; // Cancel → aborta todo
+      const unidadCleaned = (unidad || '').trim();
+      const padre = codCleaned.split('.')[0] + '.00';
       const padreObj = cat.rubros.find(r => r.cod === padre);
       const rubroPadre = padreObj ? padreObj.desc : '';
       setCat(c => ({
         ...c,
-        rubros: [...c.rubros, { cod, rubro: rubroPadre, subrubro: '', desc, unidad }],
-        biblioteca: [...c.biblioteca, { apu: cod, tipo: 'M', insumo: '', cant: 0, nota: '' }],
-        deletedApus: (Array.isArray(c.deletedApus) ? c.deletedApus : []).filter(x => x !== cod)
+        rubros: [...c.rubros, { cod: codCleaned, rubro: rubroPadre, subrubro: '', desc: descCleaned, unidad: unidadCleaned }],
+        biblioteca: [...c.biblioteca, { apu: codCleaned, tipo: 'M', insumo: '', cant: 0, nota: '' }],
+        deletedApus: (Array.isArray(c.deletedApus) ? c.deletedApus : []).filter(x => x !== codCleaned)
       }));
     } else {
       setCat(c => ({
         ...c,
-        biblioteca: [...c.biblioteca, { apu: cod, tipo: 'M', insumo: '', cant: 0, nota: '' }],
-        deletedApus: (Array.isArray(c.deletedApus) ? c.deletedApus : []).filter(x => x !== cod)
+        biblioteca: [...c.biblioteca, { apu: codCleaned, tipo: 'M', insumo: '', cant: 0, nota: '' }],
+        deletedApus: (Array.isArray(c.deletedApus) ? c.deletedApus : []).filter(x => x !== codCleaned)
       }));
     }
-    setSel(cod);
+    setSel(codCleaned);
   };
   const updFila = (idx, patch) => {
     let n = -1;
@@ -8333,7 +8481,9 @@ function App() {
     setCat: setCat
   }), view === 'rubros' && /*#__PURE__*/React.createElement(Rubros, {
     cat: cat,
-    setCat: setCat
+    setCat: setCat,
+    obras: obras,
+    setObras: setObras
   }), view === 'apus' && /*#__PURE__*/React.createElement(APUs, {
     cat: cat,
     setCat: setCat,
