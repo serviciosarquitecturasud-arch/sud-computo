@@ -2017,6 +2017,45 @@ function EditCell({
     className: `w-full bg-transparent px-1.5 py-1 rounded border border-transparent hover:border-stone-300 focus:border-amber-600 focus:bg-amber-50 outline-none ${align === 'right' ? 'text-right font-mono tabular-nums' : ''}`
   });
 }
+function EditMoney({
+  value,
+  onCommit,
+  placeholder
+}) {
+  const [v, setV] = useState('');
+  const [foc, setFoc] = useState(false);
+  const startEdit = () => {
+    setV((Number(value) || 0) > 0 ? String(value) : '');
+    setFoc(true);
+  };
+  const commit = () => {
+    setFoc(false);
+    const cleaned = String(v).replace(/\./g, '').replace(',', '.');
+    const nv = parseFloat(cleaned) || 0;
+    if (nv !== (Number(value) || 0)) onCommit(nv);
+  };
+  if (!foc) {
+    const tieneValor = (Number(value) || 0) > 0;
+    return /*#__PURE__*/React.createElement("button", {
+      type: 'button',
+      onClick: startEdit,
+      className: 'w-full text-right font-mono tabular-nums whitespace-nowrap px-1.5 py-1 rounded border border-transparent hover:border-stone-300 hover:bg-stone-50 cursor-text ' + (tieneValor ? 'text-stone-800' : 'text-stone-400 italic')
+    }, tieneValor ? money(value) : (placeholder || 'cargar'));
+  }
+  return /*#__PURE__*/React.createElement("input", {
+    value: v,
+    placeholder: placeholder || '0',
+    inputMode: 'decimal',
+    autoFocus: true,
+    onChange: e => setV(e.target.value),
+    onBlur: commit,
+    onKeyDown: e => {
+      if (e.key === 'Enter') e.target.blur();
+      if (e.key === 'Escape') setFoc(false);
+    },
+    className: 'w-full bg-amber-50 px-1.5 py-1 rounded border border-amber-600 outline-none text-right font-mono tabular-nums'
+  });
+}
 const Modal = ({
   title,
   onClose,
@@ -2192,9 +2231,8 @@ function Materiales({
     })
   })), /*#__PURE__*/React.createElement("td", {
     className: td + (m.precio > 0 ? '' : ' bg-amber-50')
-  }, /*#__PURE__*/React.createElement(EditCell, {
+  }, /*#__PURE__*/React.createElement(EditMoney, {
     value: m.precio,
-    type: "number",
     align: "right",
     onCommit: v => upd(m.cod, {
       precio: v
@@ -2251,6 +2289,7 @@ function ManoObra({
   cat,
   setCat
 }) {
+  const e = React.createElement;
   const upd = (cod, patch) => setCat(c => ({
     ...c,
     manoObra: c.manoObra.map(o => o.cod === cod ? {
@@ -2265,73 +2304,103 @@ function ManoObra({
     }));
   };
   const add = () => {
-    const cod = prompt('C\xF3digo de la nueva mano de obra (ej "06" para categor\xEDa, "SC06" para subcontrato):');
+    const cod = prompt('C\xF3digo de la nueva mano de obra (ej "06" para categor\xEDa jornalizada, "SC07" para subcontrato):');
     if (!cod) return;
     if (cat.manoObra.some(o => o.cod === cod)) { alert('Ya existe ese c\xF3digo.'); return; }
-    setCat(c => ({ ...c, manoObra: [{ cod, desc: '', unidad: 'h', valor: 0 }, ...c.manoObra] }));
+    // Si el código empieza con SC, default unidad Gl; sino hs
+    const unidadDefault = /^SC/i.test(cod) ? 'Gl' : 'hs';
+    setCat(c => ({ ...c, manoObra: [{ cod, desc: '', unidad: unidadDefault, valor: 0 }, ...c.manoObra] }));
   };
-  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(SectionTitle, {
-    sub: "Valor que se usa en los APU. Mano de obra por subcontrato: el valor es el costo final facturado (sin cargas sociales)."
-  }, "Mano de obra"), /*#__PURE__*/React.createElement("div", {
-    className: "mb-3 flex items-center gap-2"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "text-xs text-stone-500"
-  }, cat.manoObra.length, " l\xEDneas"), /*#__PURE__*/React.createElement("div", {
-    className: "ml-auto"
-  }, /*#__PURE__*/React.createElement(Btn, {
-    onClick: add,
-    sm: true
-  }, /*#__PURE__*/React.createElement(Plus, { size: 14 }), "Mano de obra"))), /*#__PURE__*/React.createElement("div", {
-    className: "bg-white border border-stone-300 rounded overflow-hidden max-w-3xl"
-  }, /*#__PURE__*/React.createElement("table", {
-    className: "w-full text-sm"
-  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", {
-    className: th + ' w-20'
-  }, "C\xF3digo"), /*#__PURE__*/React.createElement("th", {
-    className: th
-  }, "Descripci\xF3n"), /*#__PURE__*/React.createElement("th", {
-    className: th + ' w-16'
-  }, "Unidad"), /*#__PURE__*/React.createElement("th", {
-    className: th + ' w-40'
-  }, "Valor en APU (ARS)"), /*#__PURE__*/React.createElement("th", {
-    className: th + ' w-10'
-  }))), /*#__PURE__*/React.createElement("tbody", null, [...cat.manoObra].sort((a, b) => cmpCodigo(a.cod, b.cod)).map((o, i) => /*#__PURE__*/React.createElement("tr", {
-    key: o.cod + '#' + i,
-    className: "hover:bg-stone-50"
-  }, /*#__PURE__*/React.createElement("td", {
-    className: td + ' font-mono text-xs text-stone-600'
-  }, o.cod), /*#__PURE__*/React.createElement("td", {
-    className: td
-  }, /*#__PURE__*/React.createElement(EditCell, {
-    value: o.desc,
-    onCommit: v => upd(o.cod, {
-      desc: v
-    })
-  })), /*#__PURE__*/React.createElement("td", {
-    className: td
-  }, /*#__PURE__*/React.createElement("select", {
-    value: o.unidad || 'hs',
-    onChange: e => upd(o.cod, {
-      unidad: e.target.value
-    }),
-    className: "w-full bg-transparent text-sm py-1 outline-none"
-  }, /*#__PURE__*/React.createElement("option", null, "hs"), /*#__PURE__*/React.createElement("option", null, "Gl"), /*#__PURE__*/React.createElement("option", null, "U"), /*#__PURE__*/React.createElement("option", null, "un"))), /*#__PURE__*/React.createElement("td", {
-    className: td + (o.valor > 0 ? '' : ' bg-amber-50')
-  }, /*#__PURE__*/React.createElement(EditCell, {
-    value: o.valor,
-    type: "number",
-    align: "right",
-    onCommit: v => upd(o.cod, {
-      valor: v
-    })
-  })), /*#__PURE__*/React.createElement("td", {
-    className: td + ' text-center'
-  }, /*#__PURE__*/React.createElement("button", {
-    onClick: () => del(o.cod),
-    className: "text-stone-300 hover:text-red-600"
-  }, /*#__PURE__*/React.createElement(Trash2, {
-    size: 14
-  })))))))));
+  // Separar en dos grupos: jornalizados (hs) y subcontratos (resto)
+  const ordenados = [...cat.manoObra].sort((a, b) => cmpCodigo(a.cod, b.cod));
+  const jornalizados = ordenados.filter(o => (o.unidad || 'hs') === 'hs');
+  const subcontratos = ordenados.filter(o => (o.unidad || 'hs') !== 'hs');
+
+  // Render de una fila (re-utilizable para ambas tablas)
+  const renderFila = (o, i) => e("tr", { key: o.cod + '#' + i, className: "hover:bg-stone-50" },
+    e("td", { className: td + ' font-mono text-xs text-stone-600' }, o.cod),
+    e("td", { className: td },
+      e(EditCell, { value: o.desc, onCommit: v => upd(o.cod, { desc: v }) })
+    ),
+    e("td", { className: td },
+      e("select", {
+        value: o.unidad || 'hs',
+        onChange: ev => upd(o.cod, { unidad: ev.target.value }),
+        className: "w-full bg-transparent text-sm py-1 outline-none"
+      },
+        e("option", null, "hs"),
+        e("option", null, "Gl"),
+        e("option", null, "U"),
+        e("option", null, "un")
+      )
+    ),
+    e("td", { className: td + (o.valor > 0 ? '' : ' bg-amber-50') },
+      e(EditMoney, { value: o.valor, align: "right", onCommit: v => upd(o.cod, { valor: v }) })
+    ),
+    e("td", { className: td + ' text-center' },
+      e("button", {
+        onClick: () => del(o.cod),
+        className: "text-stone-300 hover:text-red-600"
+      }, e(Trash2, { size: 14 }))
+    )
+  );
+
+  // Encabezado de tabla (reutilizable)
+  const renderThead = () => e("thead", null, e("tr", null,
+    e("th", { className: th + ' w-20' }, "C\xF3digo"),
+    e("th", { className: th }, "Descripci\xF3n"),
+    e("th", { className: th + ' w-16' }, "Unidad"),
+    e("th", { className: th + ' w-40' }, "Valor en APU (ARS)"),
+    e("th", { className: th + ' w-10' })
+  ));
+
+  return e("div", null,
+    e(SectionTitle, {
+      sub: "Valor que se usa en los APU. Mano de obra por subcontrato: el valor es el costo final facturado (sin cargas sociales)."
+    }, "Mano de obra"),
+    e("div", { className: "mb-3 flex items-center gap-2" },
+      e("span", { className: "text-xs text-stone-500" }, cat.manoObra.length, " l\xEDneas \xB7 ", jornalizados.length, " jornalizadas + ", subcontratos.length, " subcontratos"),
+      e("div", { className: "ml-auto" },
+        e(Btn, { onClick: add, sm: true },
+          e(Plus, { size: 14 }), "Mano de obra"
+        )
+      )
+    ),
+
+    // SECCIÓN 1: JORNALIZADOS
+    e("div", { className: "mb-6" },
+      e("h3", { className: "font-serif text-base text-stone-700 mb-2 flex items-center gap-2" },
+        e("span", { className: "uppercase tracking-wider text-xs text-stone-500 font-semibold" }, "Jornalizados (por hora)")
+      ),
+      e("div", { className: "bg-white border border-stone-300 rounded overflow-hidden max-w-3xl" },
+        e("table", { className: "w-full text-sm" },
+          renderThead(),
+          e("tbody", null,
+            jornalizados.length === 0
+              ? e("tr", null, e("td", { className: td + ' text-stone-400 text-xs italic', colSpan: 5 }, "Sin categor\u00EDas jornalizadas. Agreg\u00E1 con c\u00F3digos tipo 01, 02, 03\u2026"))
+              : jornalizados.map(renderFila)
+          )
+        )
+      )
+    ),
+
+    // SECCIÓN 2: SUBCONTRATOS
+    e("div", { className: "mb-6" },
+      e("h3", { className: "font-serif text-base text-stone-700 mb-2 flex items-center gap-2" },
+        e("span", { className: "uppercase tracking-wider text-xs text-stone-500 font-semibold" }, "Subcontratos (monto global)")
+      ),
+      e("div", { className: "bg-white border border-stone-300 rounded overflow-hidden max-w-3xl" },
+        e("table", { className: "w-full text-sm" },
+          renderThead(),
+          e("tbody", null,
+            subcontratos.length === 0
+              ? e("tr", null, e("td", { className: td + ' text-stone-400 text-xs italic', colSpan: 5 }, "Sin subcontratos. Agreg\u00E1 con c\u00F3digos tipo SC01, SC02\u2026 y unidad Gl/un."))
+              : subcontratos.map(renderFila)
+          )
+        )
+      )
+    )
+  );
 }
 
 /* ============================ CATÁLOGO: EQUIPOS ============================ */
@@ -2415,9 +2484,8 @@ function Equipos({
     className: "w-full bg-transparent text-sm py-1 outline-none"
   }, /*#__PURE__*/React.createElement("option", null, "Propia"), /*#__PURE__*/React.createElement("option", null, "Alquilada"), /*#__PURE__*/React.createElement("option", null, "Subcontrato"))), /*#__PURE__*/React.createElement("td", {
     className: td
-  }, /*#__PURE__*/React.createElement(EditCell, {
+  }, /*#__PURE__*/React.createElement(EditMoney, {
     value: h.valor,
-    type: "number",
     align: "right",
     onCommit: v => upd(h.cod, {
       valor: v
@@ -2442,18 +2510,16 @@ function Equipos({
     })
   })), /*#__PURE__*/React.createElement("td", {
     className: td
-  }, /*#__PURE__*/React.createElement(EditCell, {
+  }, /*#__PURE__*/React.createElement(EditMoney, {
     value: h.combust,
-    type: "number",
     align: "right",
     onCommit: v => upd(h.cod, {
       combust: v
     })
   })), /*#__PURE__*/React.createElement("td", {
     className: td
-  }, /*#__PURE__*/React.createElement(EditCell, {
+  }, /*#__PURE__*/React.createElement(EditMoney, {
     value: h.reparac,
-    type: "number",
     align: "right",
     onCommit: v => upd(h.cod, {
       reparac: v
@@ -3612,11 +3678,11 @@ function ObraView({
     obra: obra,
     setObra: setObra
   })), /*#__PURE__*/React.createElement("div", {
-    className: "noprint flex gap-1 border-b border-stone-300 mb-4"
-  }, [['caratula', 'Carátula', BookOpen], ['precios', 'Precios', Tag], ['computo', 'Planilla de cotización', Calculator], ['coef', 'Coeficiente', FileText], ['apus', 'APUs en uso', Eye], ['presup', 'Presupuesto', FileText], ['explosion', 'Explosión', ShoppingCart], ['plan', 'Plan de trabajo', CalendarRange], ['curva', 'Curva de inversión', TrendingUp], ['camino', 'Camino crítico', GitBranch], ['suministro', 'Suministro', Package]].map(([k, lbl, Icon]) => /*#__PURE__*/React.createElement("button", {
+    className: "noprint flex gap-1 border-b border-stone-300 mb-4 overflow-x-auto"
+  }, [['caratula', 'Carátula', BookOpen], ['precios', 'Precios', Tag], ['computo', 'Planilla de cotización', Calculator], ['coef', 'Coeficiente', FileText], ['apus', 'APUs en uso', Eye], ['presup', 'Presupuesto', FileText], ['explosion', 'Explosión', ShoppingCart], ['mo', 'Mano de obra', HardHat], ['plan', 'Plan de trabajo', CalendarRange], ['curva', 'Curva de inversión', TrendingUp], ['camino', 'Camino crítico', GitBranch], ['suministro', 'Suministro', Package]].map(([k, lbl, Icon]) => /*#__PURE__*/React.createElement("button", {
     key: k,
     onClick: () => setTab(k),
-    className: `flex items-center gap-1.5 px-3 py-2 text-sm border-b-2 -mb-px ${tab === k ? 'border-amber-600 text-stone-800 font-medium' : 'border-transparent text-stone-500 hover:text-stone-700'}`
+    className: `whitespace-nowrap flex items-center gap-1.5 px-3 py-2 text-sm border-b-2 -mb-px ${tab === k ? 'border-amber-600 text-stone-800 font-medium' : 'border-transparent text-stone-500 hover:text-stone-700'}`
   }, /*#__PURE__*/React.createElement(Icon, {
     size: 15
   }), lbl))), mostrar('caratula') && /*#__PURE__*/React.createElement(Caratula, { obra: obra, setObra: setObra, motor: motor, cat: cat }), mostrar('precios') && /*#__PURE__*/React.createElement("div", { className: "seccion-informe" }, /*#__PURE__*/React.createElement(Precios, { obra: obra, setObra: setObra, cat: cat })), mostrar('portada') && /*#__PURE__*/React.createElement(Portada, { obra: obra }), mostrar('computo') && /*#__PURE__*/React.createElement("div", { className: "seccion-informe" }, /*#__PURE__*/React.createElement("div", {
@@ -3698,9 +3764,8 @@ function ObraView({
         className: td + ' text-right'
       }, motor.apuTiene(f.cod) ? /*#__PURE__*/React.createElement("span", {
         className: "font-mono text-stone-600"
-      }, money(f.unit)) : /*#__PURE__*/React.createElement(EditCell, {
+      }, money(f.unit)) : /*#__PURE__*/React.createElement(EditMoney, {
         value: f.precioManual,
-        type: "number",
         align: "right",
         onCommit: v => updItem(f._idx, { precioManual: v })
       })), /*#__PURE__*/React.createElement("td", {
@@ -3935,7 +4000,13 @@ function ObraView({
     className: td + ' text-right font-mono text-stone-700'
   }, fmtN(e.conDesp)), /*#__PURE__*/React.createElement("td", {
     className: td + ' text-right font-mono text-stone-800'
-  }, e.pres1 && e.comp1 !== '' ? /*#__PURE__*/React.createElement("span", null, fmtN(e.comp1), " ", e.pres1, e.pres2 && e.comp2 ? ' + ' + fmtN(e.comp2) + ' ' + e.pres2 : '') : /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("span", { className: "noprint text-stone-400 text-xs" }, "cargar presentaci\xF3n en Materiales"), /*#__PURE__*/React.createElement("span", { className: "print-only text-stone-500" }, "\u2014"))))))))), mostrar('plan') && /*#__PURE__*/React.createElement("div", { className: "seccion-informe" }, /*#__PURE__*/React.createElement(PlanTrabajo, {
+  }, e.pres1 && e.comp1 !== '' ? /*#__PURE__*/React.createElement("span", null, fmtN(e.comp1), " ", e.pres1, e.pres2 && e.comp2 ? ' + ' + fmtN(e.comp2) + ' ' + e.pres2 : '') : /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("span", { className: "noprint text-stone-400 text-xs" }, "cargar presentaci\xF3n en Materiales"), /*#__PURE__*/React.createElement("span", { className: "print-only text-stone-500" }, "\u2014"))))))))), mostrar('mo') && /*#__PURE__*/React.createElement("div", { className: "seccion-informe" }, /*#__PURE__*/React.createElement(ManoDeObraObra, {
+    obra: obra,
+    setObra: setObra,
+    motor: motor,
+    cat: cat,
+    informeSecciones: informeSecciones
+  })), mostrar('plan') && /*#__PURE__*/React.createElement("div", { className: "seccion-informe" }, /*#__PURE__*/React.createElement(PlanTrabajo, {
     planData: planData,
     setPlanCfg: setPlanCfg,
     setHsSem: setHsSem
@@ -4661,6 +4732,488 @@ function CaminoCritico({
   ), /*#__PURE__*/React.createElement("p", {
     className: "text-xs text-stone-400 mt-2"
   }, "CPM con una precedencia por rubro, seg\xFAn el criterio del sistema. El camino cr\xEDtico define el plazo de obra."));
+}
+
+/* ============================ MANO DE OBRA (por obra) ============================ */
+function ManoDeObraObra({ obra, setObra, motor, cat, informeSecciones }) {
+  const e = React.createElement;
+  const items = (obra && obra.items) || [];
+
+  // Cálculo: matriz rubro padre × código MO + totales por código + costos
+  const moComputo = useMemo(() => {
+    const porRubro = {};      // rp -> codMO -> cantidad acumulada
+    const totales = {};        // codMO -> cantidad total obra
+    const rubrosUsados = new Set();
+    items.forEach(it => {
+      const rp = String(it.cod || '').split('.')[0];
+      if (!rp) return;
+      (motor.bibMap[it.cod] || []).forEach(b => {
+        if (b.tipo !== 'MO') return;
+        const cantTotal = (b.cant || 0) * (it.cant || 0);
+        if (cantTotal <= 0) return;
+        if (!porRubro[rp]) porRubro[rp] = {};
+        porRubro[rp][b.insumo] = (porRubro[rp][b.insumo] || 0) + cantTotal;
+        totales[b.insumo] = (totales[b.insumo] || 0) + cantTotal;
+        rubrosUsados.add(rp);
+      });
+    });
+    const moDefs = (cat.manoObra || []).filter(o => totales[o.cod] > 0);
+    const jornalizados = moDefs
+      .filter(o => (o.unidad || 'hs') === 'hs')
+      .sort((a, b) => cmpCodigo(a.cod, b.cod));
+    const subcontratos = moDefs
+      .filter(o => (o.unidad || 'hs') !== 'hs')
+      .sort((a, b) => cmpCodigo(a.cod, b.cod));
+    // Rubros padre con descripción
+    const rubrosOrdenados = Array.from(rubrosUsados).sort(cmpCodigo).map(rp => {
+      const padreObj = (cat.rubros || []).find(r => r.cod === rp + '.00');
+      return {
+        rp,
+        nombre: padreObj ? padreObj.desc : ('Rubro ' + rp),
+        porCod: porRubro[rp] || {}
+      };
+    });
+    // Costos en pesos
+    const costoJorn = jornalizados.reduce((s, o) => {
+      const val = motor.costoInsumoEnObra('MO', o.cod, obra);
+      return s + (totales[o.cod] || 0) * val;
+    }, 0);
+    const costoSub = subcontratos.reduce((s, o) => {
+      const val = motor.costoInsumoEnObra('MO', o.cod, obra);
+      return s + (totales[o.cod] || 0) * val;
+    }, 0);
+    // NUEVO: detectar items subcontrato por convención de rubro
+    // Cualquier item cuyo rubro tenga "subcontrato" en su descripción
+    // se cuenta como subcontrato de MO. Precio = costoAPUEnObra o precioManual.
+    const subcontratosItems = items
+      .filter(it => {
+        const r = motor.rubMap ? motor.rubMap[it.cod] : null;
+        return r && /subcontrat/i.test(r.desc || '');
+      })
+      .map(it => {
+        const r = motor.rubMap[it.cod] || {};
+        const cant = Number(it.cant) || 0;
+        const valor = motor.apuTiene(it.cod)
+          ? motor.costoAPUEnObra(it.cod, obra)
+          : (Number(it.precioManual) || 0);
+        return {
+          cod: it.cod,
+          desc: r.desc || '',
+          unidad: r.unidad || 'Gl',
+          cant: cant,
+          valor: valor,
+          total: cant * valor,
+          rubroPadre: String(it.cod || '').split('.')[0]
+        };
+      })
+      .filter(x => x.cant > 0)
+      .sort((a, b) => cmpCodigo(a.cod, b.cod));
+    const costoSubItems = subcontratosItems.reduce((s, x) => s + x.total, 0);
+
+    // NUEVO 2: subcontratos manuales — carga directa por obra
+    // obra.subcontratosManuales = { SC01: cant, SC02: cant, ... }
+    // Lista TODOS los SC del catálogo (unidad != 'hs') y muestra los que tienen cant > 0
+    const scDefs = (cat.manoObra || [])
+      .filter(o => (o.unidad || 'hs') !== 'hs')
+      .sort((a, b) => cmpCodigo(a.cod, b.cod));
+    const scManualesMap = (obra && obra.subcontratosManuales) || {};
+    const subcontratosManuales = scDefs.map(o => {
+      const cant = Number(scManualesMap[o.cod]) || 0;
+      const valor = motor.costoInsumoEnObra('MO', o.cod, obra);
+      return {
+        cod: o.cod,
+        desc: o.desc || '',
+        unidad: o.unidad || 'Gl',
+        cant: cant,
+        valor: valor,
+        total: cant * valor
+      };
+    });
+    const costoSubManuales = subcontratosManuales.reduce((s, x) => s + x.total, 0);
+
+    return {
+      jornalizados, subcontratos,
+      subcontratosItems,
+      subcontratosManuales,
+      scDefs, // catálogo completo de SC para el editor
+      rubros: rubrosOrdenados, totales,
+      costoJorn, costoSub, costoSubItems, costoSubManuales,
+      costoTotal: costoJorn + costoSub + costoSubItems + costoSubManuales
+    };
+  }, [items, motor, cat, obra]);
+
+  // Costo directo total (para % de MO sobre costo directo)
+  const costoDirecto = useMemo(() => {
+    return items.reduce((s, it) => {
+      if (motor.apuTiene(it.cod)) {
+        return s + motor.costoAPUEnObra(it.cod, obra) * (it.cant || 0);
+      }
+      return s + (it.precioManual || 0) * (it.cant || 0);
+    }, 0);
+  }, [items, motor, obra]);
+
+  // Qué rubros usan cada subcontrato (lista compacta de códigos)
+  const rubrosQueUsan = (codSub) => {
+    return moComputo.rubros
+      .filter(r => (r.porCod[codSub] || 0) > 0)
+      .map(r => r.rp)
+      .sort(cmpCodigo)
+      .join(', ');
+  };
+
+  const fmtH = n => n == null || isNaN(n) ? '' : n.toLocaleString('es-AR', { maximumFractionDigits: 2 });
+
+  if (items.length === 0 || moComputo.rubros.length === 0) {
+    return e("div", null,
+      e("div", { className: "bg-white border border-stone-300 rounded" },
+        e(Empty, { icon: HardHat, msg: "Sin mano de obra computada todav\u00EDa (carg\u00E1 \u00EDtems con APU en la Planilla de cotizaci\u00F3n)." })
+      )
+    );
+  }
+
+  const subtotalJornFila = (r) => moComputo.jornalizados.reduce((s, o) => s + (r.porCod[o.cod] || 0), 0);
+
+  return e("div", null,
+    // Header descripción
+    e("div", { className: "text-sm text-stone-500 mb-4" },
+      "Recuento de mano de obra agrupado por rubro padre. Jornalizados en horas, subcontratos en su unidad de facturaci\u00F3n. Los precios provienen del cat\u00E1logo o del override por obra (solapa Precios)."
+    ),
+
+    // BLOQUE 1: matriz jornalizados
+    moComputo.jornalizados.length > 0 && e("div", { className: "mb-6" },
+      e("h3", { className: "font-serif text-lg text-stone-800 mb-2" }, "Jornalizados \u2014 horas por rubro"),
+      e("div", { className: "bg-white border border-stone-300 rounded overflow-x-auto" },
+        e("table", { className: "w-full text-sm" },
+          e("thead", null,
+            e("tr", null,
+              e("th", { className: th + ' w-16' }, "Rubro"),
+              e("th", { className: th }, "Descripci\u00F3n"),
+              ...moComputo.jornalizados.map(o => e("th", { key: o.cod, className: th + ' w-36 text-right' },
+                e("div", { className: "text-xs" }, o.cod),
+                e("div", { className: "text-xs font-normal text-stone-500 normal-case tracking-normal" }, o.desc)
+              )),
+              e("th", { className: th + ' w-40 text-right' }, "TOTAL hs")
+            )
+          ),
+          e("tbody", null,
+            // Fila por rubro
+            ...moComputo.rubros.map(r => e("tr", { key: r.rp, className: "hover:bg-stone-50" },
+              e("td", { className: td + ' font-mono text-xs text-stone-600' }, r.rp),
+              e("td", { className: td + ' text-xs' }, r.nombre),
+              ...moComputo.jornalizados.map(o => {
+                const v = r.porCod[o.cod] || 0;
+                return e("td", { key: o.cod, className: td + ' text-right font-mono ' + (v > 0 ? 'text-stone-800' : 'text-stone-300') },
+                  v > 0 ? fmtH(v) : '\u2014'
+                );
+              }),
+              e("td", { className: td + ' text-right font-mono font-semibold text-stone-900' }, fmtH(subtotalJornFila(r)))
+            )),
+            // Fila TOTAL OBRA (hs)
+            e("tr", { className: "bg-stone-100 font-semibold" },
+              e("td", { className: td, colSpan: 2 }, "TOTAL OBRA (hs)"),
+              ...moComputo.jornalizados.map(o => e("td", { key: o.cod, className: td + ' text-right font-mono text-stone-900' },
+                fmtH(moComputo.totales[o.cod] || 0)
+              )),
+              e("td", { className: td + ' text-right font-mono text-stone-900' },
+                fmtH(moComputo.jornalizados.reduce((s, o) => s + (moComputo.totales[o.cod] || 0), 0))
+              )
+            ),
+            // Fila costo en pesos (con color rojo si supera el presupuesto asignado)
+            (() => {
+              const presup = Number(obra.presupuestoMOJorn) || 0;
+              const excede = presup > 0 && moComputo.costoJorn > presup;
+              return e("tr", { className: "bg-stone-50 text-xs text-stone-600" },
+                e("td", { className: td, colSpan: 2 }, "Costo MO jornalizada (ARS)"),
+                ...moComputo.jornalizados.map(o => {
+                  const val = motor.costoInsumoEnObra('MO', o.cod, obra);
+                  const total = (moComputo.totales[o.cod] || 0) * val;
+                  return e("td", { key: o.cod, className: td + ' text-right font-mono whitespace-nowrap' }, money(total));
+                }),
+                e("td", { className: td + ' text-right font-mono font-semibold whitespace-nowrap ' + (excede ? 'text-red-600' : 'text-stone-900') }, money(moComputo.costoJorn))
+              );
+            })(),
+            // Fila Presupuesto asignado (editable a mano)
+            e("tr", { className: "bg-amber-50/40 text-xs" },
+              e("td", { className: td + ' text-stone-700', colSpan: moComputo.jornalizados.length + 2 },
+                "Presupuesto asignado (ARS) ",
+                e("span", { className: "text-stone-400 noprint" }, "\u2014 cargado a mano para control")
+              ),
+              e("td", { className: td + ' text-right' },
+                informeSecciones
+                  ? e("span", { className: "font-mono text-stone-800" },
+                      (Number(obra.presupuestoMOJorn) || 0) > 0 ? money(Number(obra.presupuestoMOJorn)) : '\u2014'
+                    )
+                  : e(EditMoney, {
+                      value: obra.presupuestoMOJorn || 0,
+                      placeholder: 'cargar',
+                      onCommit: v => setObra({ ...obra, presupuestoMOJorn: Number(v) || 0 })
+                    })
+              )
+            )
+          )
+        )
+      )
+    ),
+
+    // BLOQUE 2A: Subcontratos contratados (carga manual a mano por obra)
+    moComputo.scDefs.length > 0 && e("div", { className: "mb-6" },
+      e("h3", { className: "font-serif text-lg text-stone-800 mb-2" }, "Subcontratos contratados en esta obra"),
+      e("div", { className: "text-sm text-stone-500 mb-2 noprint" },
+        "Carg\u00E1 la cantidad de cada subcontrato que aplica a esta obra (t\u00EDpicamente 1 por gremio). El valor unitario sale del cat\u00E1logo o del override en la solapa Precios."
+      ),
+      e("div", { className: "bg-white border border-stone-300 rounded overflow-x-auto" },
+        e("table", { className: "w-full text-sm" },
+          e("thead", null,
+            e("tr", null,
+              e("th", { className: th + ' w-20' }, "C\u00F3digo"),
+              e("th", { className: th }, "Descripci\u00F3n"),
+              e("th", { className: th + ' w-14' }, "Un."),
+              e("th", { className: th + ' w-24 text-right' }, "Cantidad"),
+              e("th", { className: th + ' w-40 text-right' }, "Valor unitario"),
+              e("th", { className: th + ' w-40 text-right' }, "Total")
+            )
+          ),
+          e("tbody", null,
+            ...moComputo.subcontratosManuales.map(x => {
+              const sinPrecio = !x.valor || x.valor <= 0;
+              const inactivo = x.cant <= 0;
+              return e("tr", { key: 'sm-' + x.cod, className: inactivo ? "hover:bg-stone-50" : "hover:bg-stone-50 bg-amber-50/30" },
+                e("td", { className: td + ' font-mono text-xs ' + (inactivo ? 'text-stone-400' : 'text-stone-600') }, x.cod),
+                e("td", { className: td + (inactivo ? ' text-stone-400' : '') }, x.desc),
+                e("td", { className: td + ' text-stone-500' }, x.unidad || 'Gl'),
+                // Cantidad EDITABLE
+                e("td", { className: td },
+                  informeSecciones
+                    ? e("span", { className: "font-mono text-right block text-stone-800" }, x.cant > 0 ? fmtH(x.cant) : '\u2014')
+                    : e(EditCell, {
+                        value: x.cant || '',
+                        type: 'number',
+                        align: 'right',
+                        placeholder: '0',
+                        onCommit: v => {
+                          const nuevaCant = Number(v) || 0;
+                          const actual = (obra.subcontratosManuales || {});
+                          const nuevo = { ...actual };
+                          if (nuevaCant > 0) nuevo[x.cod] = nuevaCant;
+                          else delete nuevo[x.cod];
+                          setObra({ ...obra, subcontratosManuales: nuevo });
+                        }
+                      })
+                ),
+                e("td", { className: td + ' text-right font-mono whitespace-nowrap ' + (sinPrecio ? 'text-red-600' : (inactivo ? 'text-stone-400' : 'text-stone-700')) },
+                  sinPrecio ? '(sin precio)' : money(x.valor)
+                ),
+                e("td", { className: td + ' text-right font-mono font-semibold whitespace-nowrap ' + (inactivo ? 'text-stone-400' : 'text-stone-800') },
+                  x.cant > 0 ? money(x.total) : '\u2014'
+                )
+              );
+            }),
+            // Total
+            e("tr", { className: "bg-stone-100 font-semibold" },
+              e("td", { className: td, colSpan: 5 }, "Total subcontratos contratados"),
+              e("td", { className: td + ' text-right font-mono text-stone-900 whitespace-nowrap' }, money(moComputo.costoSubManuales))
+            )
+          )
+        )
+      )
+    ),
+
+    // BLOQUE 2: subcontratos (SC* en APUs + items detectados por convención)
+    (moComputo.subcontratos.length > 0 || moComputo.subcontratosItems.length > 0) && e("div", { className: "mb-6" },
+      e("h3", { className: "font-serif text-lg text-stone-800 mb-2" }, "Subcontratos por gremio"),
+      e("div", { className: "bg-white border border-stone-300 rounded overflow-x-auto" },
+        e("table", { className: "w-full text-sm" },
+          e("thead", null,
+            e("tr", null,
+              e("th", { className: th + ' w-20' }, "C\u00F3digo"),
+              e("th", { className: th }, "Descripci\u00F3n"),
+              e("th", { className: th + ' w-40' }, "Rubros que lo usan"),
+              e("th", { className: th + ' w-14' }, "Un."),
+              e("th", { className: th + ' w-20 text-right' }, "Cantidad"),
+              e("th", { className: th + ' w-36 text-right' }, "Valor unitario"),
+              e("th", { className: th + ' w-40 text-right' }, "Total")
+            )
+          ),
+          e("tbody", null,
+            // Items subcontrato detectados por convención (NUEVO método)
+            ...moComputo.subcontratosItems.map(x => {
+              const sinPrecio = !x.valor || x.valor <= 0;
+              return e("tr", { key: 'sci-' + x.cod, className: "hover:bg-stone-50" },
+                e("td", { className: td + ' font-mono text-xs text-stone-600' }, x.cod),
+                e("td", { className: td }, x.desc),
+                e("td", { className: td + ' text-xs text-stone-500 font-mono' }, x.rubroPadre),
+                e("td", { className: td + ' text-stone-500' }, x.unidad || 'Gl'),
+                e("td", { className: td + ' text-right font-mono' }, fmtH(x.cant)),
+                e("td", { className: td + ' text-right font-mono whitespace-nowrap ' + (sinPrecio ? 'text-red-600' : 'text-stone-700') },
+                  sinPrecio ? '(sin precio)' : money(x.valor)
+                ),
+                e("td", { className: td + ' text-right font-mono font-semibold text-stone-800 whitespace-nowrap' }, money(x.total))
+              );
+            }),
+            // SC* en APUs (método legacy — se mantiene mientras dure la transición)
+            ...moComputo.subcontratos.map(o => {
+              const cant = moComputo.totales[o.cod] || 0;
+              const val = motor.costoInsumoEnObra('MO', o.cod, obra);
+              const tot = cant * val;
+              const sinPrecio = !val || val <= 0;
+              return e("tr", { key: o.cod, className: "hover:bg-stone-50" },
+                e("td", { className: td + ' font-mono text-xs text-stone-600' }, o.cod),
+                e("td", { className: td }, o.desc),
+                e("td", { className: td + ' text-xs text-stone-500 font-mono' }, rubrosQueUsan(o.cod)),
+                e("td", { className: td + ' text-stone-500' }, o.unidad || 'Gl'),
+                e("td", { className: td + ' text-right font-mono' }, fmtH(cant)),
+                e("td", { className: td + ' text-right font-mono whitespace-nowrap ' + (sinPrecio ? 'text-red-600' : 'text-stone-700') },
+                  sinPrecio ? '(sin precio)' : money(val)
+                ),
+                e("td", { className: td + ' text-right font-mono font-semibold text-stone-800 whitespace-nowrap' }, money(tot))
+              );
+            }),
+            e("tr", { className: "bg-stone-100 font-semibold" },
+              e("td", { className: td, colSpan: 6 }, "Total subcontratos"),
+              e("td", { className: td + ' text-right font-mono text-stone-900 whitespace-nowrap' }, money(moComputo.costoSub + moComputo.costoSubItems))
+            )
+          )
+        )
+      )
+    ),
+
+    // BLOQUE 3: resumen detallado tipo tabla (un renglón por cada código MO en uso)
+    e("div", { className: "mb-6" },
+      e("h3", { className: "font-serif text-lg text-stone-800 mb-2" }, "Resumen de mano de obra"),
+      e("div", { className: "bg-white border border-stone-300 rounded overflow-x-auto" },
+        e("table", { className: "w-full text-sm" },
+          e("thead", null,
+            e("tr", null,
+              e("th", { className: th + ' w-20' }, "C\u00F3digo"),
+              e("th", { className: th }, "Descripci\u00F3n"),
+              e("th", { className: th + ' w-14' }, "Un."),
+              e("th", { className: th + ' w-24 text-right' }, "Cantidad"),
+              e("th", { className: th + ' w-36 text-right' }, "Valor unitario"),
+              e("th", { className: th + ' w-40 text-right' }, "Total"),
+              e("th", { className: th + ' w-20 text-right' }, "% Inc.")
+            )
+          ),
+          e("tbody", null,
+            // Sub-encabezado: Jornalizados
+            moComputo.jornalizados.length > 0 && e("tr", { key: 'hdr-j', className: "bg-stone-100" },
+              e("td", { className: td + ' text-xs uppercase tracking-wider text-stone-500 font-semibold', colSpan: 7 }, "Jornalizados")
+            ),
+            ...moComputo.jornalizados.map(o => {
+              const cant = moComputo.totales[o.cod] || 0;
+              const val = motor.costoInsumoEnObra('MO', o.cod, obra);
+              const tot = cant * val;
+              const sinPrecio = !val || val <= 0;
+              const inc = costoDirecto > 0 ? (tot / costoDirecto * 100) : 0;
+              return e("tr", { key: 'j-' + o.cod, className: "hover:bg-stone-50" },
+                e("td", { className: td + ' font-mono text-xs text-stone-600' }, o.cod),
+                e("td", { className: td }, o.desc),
+                e("td", { className: td + ' text-stone-500' }, o.unidad || 'hs'),
+                e("td", { className: td + ' text-right font-mono whitespace-nowrap' }, fmtH(cant)),
+                e("td", { className: td + ' text-right font-mono whitespace-nowrap ' + (sinPrecio ? 'text-red-600' : 'text-stone-700') },
+                  sinPrecio ? '(sin precio)' : money(val)
+                ),
+                e("td", { className: td + ' text-right font-mono font-semibold text-stone-800 whitespace-nowrap' }, money(tot)),
+                e("td", { className: td + ' text-right font-mono text-xs text-stone-500' }, costoDirecto > 0 ? inc.toFixed(1) + ' %' : '\u2014')
+              );
+            }),
+            // Subtotal Jornalizados (solo si hay)
+            moComputo.jornalizados.length > 0 && e("tr", { key: 'sub-j', className: "bg-stone-50 text-xs text-stone-600" },
+              e("td", { className: td, colSpan: 5 }, "Subtotal jornalizados"),
+              e("td", { className: td + ' text-right font-mono font-semibold text-stone-900 whitespace-nowrap' }, money(moComputo.costoJorn)),
+              e("td", { className: td + ' text-right font-mono font-semibold text-stone-700' }, costoDirecto > 0 ? (moComputo.costoJorn / costoDirecto * 100).toFixed(1) + ' %' : '\u2014')
+            ),
+            // Sub-encabezado: Subcontratos (unificado — manuales + items con "subcontrato" en rubro)
+            (() => {
+              const manualesActivos = moComputo.subcontratosManuales.filter(x => x.cant > 0);
+              const totalSubFuentes = manualesActivos.length + moComputo.subcontratosItems.length;
+              if (totalSubFuentes === 0) return null;
+              return e("tr", { key: 'hdr-sci', className: "bg-stone-100" },
+                e("td", { className: td + ' text-xs uppercase tracking-wider text-stone-500 font-semibold', colSpan: 7 }, "Subcontratos")
+              );
+            })(),
+            // Subcontratos manuales (carga directa) — solo los activos (cant > 0)
+            ...moComputo.subcontratosManuales.filter(x => x.cant > 0).map(x => {
+              const sinPrecio = !x.valor || x.valor <= 0;
+              const inc = costoDirecto > 0 ? (x.total / costoDirecto * 100) : 0;
+              return e("tr", { key: 'scm-' + x.cod, className: "hover:bg-stone-50" },
+                e("td", { className: td + ' font-mono text-xs text-stone-600' }, x.cod),
+                e("td", { className: td }, x.desc),
+                e("td", { className: td + ' text-stone-500' }, x.unidad || 'Gl'),
+                e("td", { className: td + ' text-right font-mono whitespace-nowrap' }, fmtH(x.cant)),
+                e("td", { className: td + ' text-right font-mono whitespace-nowrap ' + (sinPrecio ? 'text-red-600' : 'text-stone-700') },
+                  sinPrecio ? '(sin precio)' : money(x.valor)
+                ),
+                e("td", { className: td + ' text-right font-mono font-semibold text-stone-800 whitespace-nowrap' }, money(x.total)),
+                e("td", { className: td + ' text-right font-mono text-xs text-stone-500' }, costoDirecto > 0 ? inc.toFixed(1) + ' %' : '\u2014')
+              );
+            }),
+            // Subcontratos por items con "subcontrato" en rubro
+            ...moComputo.subcontratosItems.map(x => {
+              const sinPrecio = !x.valor || x.valor <= 0;
+              const inc = costoDirecto > 0 ? (x.total / costoDirecto * 100) : 0;
+              return e("tr", { key: 'sci2-' + x.cod, className: "hover:bg-stone-50" },
+                e("td", { className: td + ' font-mono text-xs text-stone-600' }, x.cod),
+                e("td", { className: td }, x.desc),
+                e("td", { className: td + ' text-stone-500' }, x.unidad || 'Gl'),
+                e("td", { className: td + ' text-right font-mono whitespace-nowrap' }, fmtH(x.cant)),
+                e("td", { className: td + ' text-right font-mono whitespace-nowrap ' + (sinPrecio ? 'text-red-600' : 'text-stone-700') },
+                  sinPrecio ? '(sin precio)' : money(x.valor)
+                ),
+                e("td", { className: td + ' text-right font-mono font-semibold text-stone-800 whitespace-nowrap' }, money(x.total)),
+                e("td", { className: td + ' text-right font-mono text-xs text-stone-500' }, costoDirecto > 0 ? inc.toFixed(1) + ' %' : '\u2014')
+              );
+            }),
+            // Sub-encabezado: Subcontratos legacy (SC* en APUs)
+            moComputo.subcontratos.length > 0 && e("tr", { key: 'hdr-s', className: "bg-stone-100" },
+              e("td", { className: td + ' text-xs uppercase tracking-wider text-stone-500 font-semibold', colSpan: 7 }, "Subcontratos (legacy \u2014 SC en APUs)")
+            ),
+            ...moComputo.subcontratos.map(o => {
+              const cant = moComputo.totales[o.cod] || 0;
+              const val = motor.costoInsumoEnObra('MO', o.cod, obra);
+              const tot = cant * val;
+              const sinPrecio = !val || val <= 0;
+              const inc = costoDirecto > 0 ? (tot / costoDirecto * 100) : 0;
+              return e("tr", { key: 's-' + o.cod, className: "hover:bg-stone-50" },
+                e("td", { className: td + ' font-mono text-xs text-stone-600' }, o.cod),
+                e("td", { className: td }, o.desc),
+                e("td", { className: td + ' text-stone-500' }, o.unidad || 'Gl'),
+                e("td", { className: td + ' text-right font-mono whitespace-nowrap' }, fmtH(cant)),
+                e("td", { className: td + ' text-right font-mono whitespace-nowrap ' + (sinPrecio ? 'text-red-600' : 'text-stone-700') },
+                  sinPrecio ? '(sin precio)' : money(val)
+                ),
+                e("td", { className: td + ' text-right font-mono font-semibold text-stone-800 whitespace-nowrap' }, money(tot)),
+                e("td", { className: td + ' text-right font-mono text-xs text-stone-500' }, costoDirecto > 0 ? inc.toFixed(1) + ' %' : '\u2014')
+              );
+            }),
+            // Subtotal Subcontratos (combina las TRES fuentes: manuales + items + legacy)
+            (() => {
+              const manualesActivos = moComputo.subcontratosManuales.filter(x => x.cant > 0);
+              const hayAlgo = moComputo.subcontratos.length > 0 || moComputo.subcontratosItems.length > 0 || manualesActivos.length > 0;
+              if (!hayAlgo) return null;
+              const subSub = moComputo.costoSub + moComputo.costoSubItems + moComputo.costoSubManuales;
+              return e("tr", { key: 'sub-s', className: "bg-stone-50 text-xs text-stone-600" },
+                e("td", { className: td, colSpan: 5 }, "Subtotal subcontratos"),
+                e("td", { className: td + ' text-right font-mono font-semibold text-stone-900 whitespace-nowrap' }, money(subSub)),
+                e("td", { className: td + ' text-right font-mono font-semibold text-stone-700' }, costoDirecto > 0 ? (subSub / costoDirecto * 100).toFixed(1) + ' %' : '\u2014')
+              );
+            })(),
+            // TOTAL FINAL con % de incidencia integrado
+            e("tr", { key: 'total', className: "bg-stone-200 font-semibold" },
+              e("td", { className: td, colSpan: 5 }, "TOTAL MO DE OBRA"),
+              e("td", { className: td + ' text-right font-mono text-stone-900 text-base whitespace-nowrap' }, money(moComputo.costoTotal)),
+              e("td", { className: td + ' text-right font-mono text-stone-900 text-base' }, costoDirecto > 0 ? (moComputo.costoTotal / costoDirecto * 100).toFixed(1) + ' %' : '\u2014')
+            ),
+            // Costo directo total (referencia)
+            costoDirecto > 0 && e("tr", { key: 'cd', className: "bg-white text-xs text-stone-500" },
+              e("td", { className: td, colSpan: 5 }, "Costo directo total de obra (referencia)"),
+              e("td", { className: td + ' text-right font-mono whitespace-nowrap' }, money(costoDirecto)),
+              e("td", { className: td + ' text-right font-mono' }, "100,0 %")
+            )
+          )
+        )
+      )
+    )
+  );
 }
 
 /* ============================ PLAN DE SUMINISTRO ============================ */
@@ -7278,17 +7831,15 @@ function Precios({ obra, setObra, cat }) {
                 e('td', { className: td + ' text-right text-stone-500' }, m.unidad || ''),
                 e('td', { className: td + ' text-right font-mono text-xs text-stone-400' }, precioGenerico > 0 ? money(precioGenerico) : '—'),
                 e('td', { className: td + (precioEfectivo > 0 ? '' : ' bg-amber-50') },
-                  e(EditCell, {
+                  e(EditMoney, {
                     value: tieneOverride ? overrideMap[m.cod] : '',
-                    type: 'number',
                     align: 'right',
                     onCommit: v => setPrecioSinIVA('materiales', m.cod, v)
                   })
                 ),
                 e('td', { className: td },
-                  e(EditCell, {
+                  e(EditMoney, {
                     value: getValorConIVA('materiales', m.cod),
-                    type: 'number',
                     align: 'right',
                     onCommit: v => setPrecioConIVA('materiales', m.cod, v)
                   })
@@ -7362,9 +7913,8 @@ function Precios({ obra, setObra, cat }) {
             e('td', { className: td + ' text-right text-stone-500' }, mo.unidad || 'hs'),
             e('td', { className: td + ' text-right font-mono text-xs text-stone-400' }, valorGenerico > 0 ? money(valorGenerico) : '—'),
             e('td', { className: td + (valorEfectivo > 0 ? '' : ' bg-amber-50') },
-              e(EditCell, {
+              e(EditMoney, {
                 value: tieneOverride ? overrideMap[mo.cod] : '',
-                type: 'number',
                 align: 'right',
                 onCommit: v => setOverride('manoObra', mo.cod, v)
               })
@@ -7434,17 +7984,15 @@ function Precios({ obra, setObra, cat }) {
             e('td', { className: td + ' text-right text-stone-500 text-xs' }, h.tenencia || '—'),
             e('td', { className: td + ' text-right font-mono text-xs text-stone-400' }, valorGenerico > 0 ? money(valorGenerico) : '—'),
             e('td', { className: td },
-              e(EditCell, {
+              e(EditMoney, {
                 value: tieneOverride ? overrideMap[h.cod] : '',
-                type: 'number',
                 align: 'right',
                 onCommit: v => setPrecioSinIVA('herramientas', h.cod, v)
               })
             ),
             e('td', { className: td },
-              e(EditCell, {
+              e(EditMoney, {
                 value: getValorConIVA('herramientas', h.cod),
-                type: 'number',
                 align: 'right',
                 onCommit: v => setPrecioConIVA('herramientas', h.cod, v)
               })
@@ -7856,6 +8404,7 @@ function PrintModal({ obra, onClose, onPrint }) {
     { id: 'apus',       label: 'APUs en uso (auditoría)' },
     { id: 'presup',     label: 'Presupuesto formal' },
     { id: 'explosion',  label: 'Explosión de insumos' },
+    { id: 'mo',         label: 'Mano de obra' },
     { id: 'plan',       label: 'Plan de trabajo' },
     { id: 'curva',      label: 'Curva de inversión' },
     { id: 'camino',     label: 'Camino crítico' },
