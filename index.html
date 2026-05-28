@@ -2209,6 +2209,10 @@ function Materiales({
   }, "Present. compra"), /*#__PURE__*/React.createElement("th", {
     className: th + ' w-20'
   }, "Factor"), /*#__PURE__*/React.createElement("th", {
+    className: th
+  }, "Present. 2"), /*#__PURE__*/React.createElement("th", {
+    className: th + ' w-20'
+  }, "Factor 2"), /*#__PURE__*/React.createElement("th", {
     className: th + ' w-10'
   }))), /*#__PURE__*/React.createElement("tbody", null, list.map((m, i) => /*#__PURE__*/React.createElement("tr", {
     key: m.cod + '#' + i,
@@ -2269,6 +2273,23 @@ function Materiales({
     align: "right",
     onCommit: v => upd(m.cod, {
       fac1: v
+    })
+  })), /*#__PURE__*/React.createElement("td", {
+    className: td
+  }, /*#__PURE__*/React.createElement(EditCell, {
+    value: m.pres2,
+    placeholder: "\u2014",
+    onCommit: v => upd(m.cod, {
+      pres2: v
+    })
+  })), /*#__PURE__*/React.createElement("td", {
+    className: td
+  }, /*#__PURE__*/React.createElement(EditCell, {
+    value: m.fac2,
+    type: "number",
+    align: "right",
+    onCommit: v => upd(m.cod, {
+      fac2: v
     })
   })), /*#__PURE__*/React.createElement("td", {
     className: td + ' text-center'
