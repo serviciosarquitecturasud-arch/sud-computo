@@ -3431,7 +3431,7 @@ function ApusEnUsoPanel({ obra, motor, cat, informeSecciones }) {
           const pctM = a.costoUnitario > 0 ? (a.subM / a.costoUnitario * 100) : 0;
           const pctMO = a.costoUnitario > 0 ? (a.subMO / a.costoUnitario * 100) : 0;
           const pctE = a.costoUnitario > 0 ? (a.subE / a.costoUnitario * 100) : 0;
-          const tieneAlertas = a.insumos.some(i => i.sinPrecio || i.huerfano);
+          const tieneAlertas = a.insumos.some(i => i.huerfano);
 
           return e('div', { key: a.cod, className: 'p-3' },
             // Header del APU (clickeable para expandir si no es informe)
