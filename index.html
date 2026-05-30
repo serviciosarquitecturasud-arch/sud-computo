@@ -30,6 +30,40 @@ html, body, button, input, select, textarea {
     background: #ffffff !important;
   }
 
+  /* 3-bis Parte A — Separadores de 3 NIVELES de jerarquia en impresion:
+     - SECCION  = barra negra + letra blanca  (.seccion-informe::before, mas abajo)
+     - RUBRO    = barra gris oscuro + letra blanca  (filas bg-stone-800/900)
+     - SUB-ITEM = barra gris clara + letra oscura   (filas .subitem-print / bg-stone-200) */
+  .bg-stone-800, .bg-stone-900 {
+    background-color: #44403c !important;   /* gris oscuro = RUBRO */
+    background: #44403c !important;
+    color: #ffffff !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  .bg-stone-800 *, .bg-stone-900 * { color: #ffffff !important; }
+  /* Sub-items / subtotales: gris claro con letra oscura */
+  .bg-stone-200, tr.subitem-print {
+    background-color: #e7e5e4 !important;   /* gris claro = SUB-ITEM */
+    background: #e7e5e4 !important;
+    color: #1c1917 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  .bg-amber-600, .bg-amber-500 {
+    background-color: #44403c !important;   /* cintas ambar -> gris oscuro en print */
+    background: #44403c !important;
+    color: #ffffff !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  .bg-amber-600 *, .bg-amber-500 * { color: #ffffff !important; }
+  /* Las filas de cinta (rubro / subitem) no se parten entre paginas */
+  tr.bg-stone-800, tr.bg-stone-900, tr.bg-amber-600, tr.bg-stone-200, tr.subitem-print {
+    page-break-inside: avoid !important;
+    page-break-after: avoid !important;
+  }
+
   /* Las barras del Gantt, badges y elementos con color crítico SÍ deben
      conservar su color (color-adjust selectivo, no global). */
   [data-tip-container] [style*="background"],
@@ -109,8 +143,46 @@ html, body, button, input, select, textarea {
   /* Utilidades de salto de página */
   .print-break-before { page-break-before: always !important; }
   .print-no-break { page-break-inside: avoid !important; }
-  /* Saltos entre secciones del informe (NO se aplica a la primera) */
-  .seccion-informe + .seccion-informe { page-break-before: always !important; }
+  /* 3-bis Parte A — FLUJO CONTINUO. Las secciones NO fuerzan salto: fluyen una
+     tras otra y solo cortan cuando el contenido no entra. Esto elimina las hojas
+     a medio llenar que se veian en las pruebas. */
+  .seccion-informe {
+    page-break-inside: auto;
+    break-inside: auto;
+    page-break-before: auto !important;
+    page-break-after: auto !important;
+  }
+  /* Mantener juntos el titulo de seccion con el inicio de su contenido */
+  .titulo-impresion {
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* 3.A — Encabezado de seccion anunciado: cada .seccion-informe con data-titulo
+     imprime un titulo pesado arriba, asi el lector sabe que esta por leer. */
+  .seccion-informe[data-titulo]::before {
+    content: attr(data-titulo);
+    display: block;
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    font-size: 13pt;
+    font-weight: 700;
+    color: #ffffff;
+    background: #1c1917;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    padding: 6px 12px;
+    margin: 0 0 10px 0;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+
+  /* 3.A — Limpiar huerfanos: los parrafos de ayuda de pantalla (contadores
+     "N items en uso...", textos de instruccion) no aportan en el documento
+     impreso y aparecen sueltos arriba de las tablas. Se ocultan en print. */
+  .ayuda-pantalla { display: none !important; }
 
   /* Tablas: no romper filas a la mitad, repetir thead en cada página */
   table { page-break-inside: auto !important; }
@@ -137,21 +209,36 @@ html, body, button, input, select, textarea {
 
   /* Watermark gráfico SUD — eliminado en HITO 27.E.6 (movido al pie del documento) */
 
-  @page { margin: 2cm 1.5cm 3cm 1.5cm; }
+  @page { margin: 1.8cm 1.5cm 1.8cm 1.5cm; }
+
+  /* 3-bis Punto 4 — Apaisado de graficos. Se calibra con pruebas reales.
+     Por ahora: el grafico ocupa su propia hoja (salto antes/despues) en vertical,
+     a la espera de validar el metodo de rotacion con tus capturas. */
+  .seccion-apaisada {
+    page-break-before: always !important;
+    page-break-after: always !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+  .seccion-apaisada [data-tip-container] { max-width: 100% !important; width: 100% !important; }
+  .seccion-apaisada .overflow-x-auto { overflow: visible !important; }
 }
 /* En pantalla: ocultar pie del informe (solo visible al imprimir) */
 .informe-pie { display: none; }
 @media print {
   .informe-pie {
     display: block !important;
-    margin-top: 4cm !important;
-    padding-top: 1cm !important;
+    margin-top: 1cm !important;
+    padding-top: 0.6cm !important;
     border-top: 1px solid #d6d3d1 !important;
     font-family: ui-sans-serif, system-ui, sans-serif !important;
     font-size: 9pt !important;
     color: #57534e !important;
     text-align: center !important;
     line-height: 1.6 !important;
+    page-break-before: avoid !important;
+    break-before: avoid !important;
+    page-break-inside: avoid !important;
   }
   .informe-pie .nombre {
     font-size: 14pt !important;
@@ -3665,6 +3752,16 @@ function ObraView({
         }
         totalComprar = (comp1 || 0) * m.fac1 + (comp2 || 0) * (m.fac2 || 0);
       }
+      // Hito 2 — datos comerciales para comparar contra mercado.
+      // β = precio teórico por unidad física (mismo del motor). Precio P1 (palet) = β × fac1.
+      const beta = motor.costoInsumoEnObra('M', k, obra);
+      const fac1c = Number(m.fac1) || 0;
+      const precioP1 = fac1c > 0 ? beta * fac1c : beta; // precio de la presentación 1 c/IVA
+      const precioP2 = Number(((obra.precios || {}).materialesPres2ConIVA || {})[k]) || 0;
+      const sub1 = (Number(comp1) || 0) * precioP1;
+      const sub2 = (Number(comp2) || 0) * precioP2;
+      const totalCompraPesos = sub1 + sub2;
+      const proveedor = ((obra.proveedores || {}).materiales || {})[k] || '';
       return {
         cod: k,
         desc: m.desc,
@@ -3676,10 +3773,16 @@ function ObraView({
         comp1,
         pres2: m.pres2,
         comp2,
-        totalComprar
+        totalComprar,
+        precioP1,
+        precioP2,
+        sub1,
+        sub2,
+        totalCompraPesos,
+        proveedor
       };
     }).sort((a, b) => cmpCodigo(a.cod, b.cod));
-  }, [items, motor, obra.materialesConfig]);
+  }, [items, motor, obra.materialesConfig, obra.precios, obra.proveedores]);
 
   // Hito 8 — Ajuste por presentación comercial (camino γ).
   // Por cada material en uso: (totalComprar − nec) × precio_teórico_β
@@ -3725,7 +3828,7 @@ function ObraView({
   }, /*#__PURE__*/React.createElement(ChevronLeft, {
     size: 16
   }), "Volver a obras"), /*#__PURE__*/React.createElement("div", {
-    className: "flex items-baseline gap-3 mb-1"
+    className: "noprint flex items-baseline gap-3 mb-1"
   }, /*#__PURE__*/React.createElement("h2", {
     className: "font-serif text-2xl text-stone-800"
   }, obra.nombre), obra.comitente && /*#__PURE__*/React.createElement("span", {
@@ -3740,7 +3843,7 @@ function ObraView({
   }, /*#__PURE__*/React.createElement(Download, {
     size: 13
   }), "Exportar obra"))), /*#__PURE__*/React.createElement("div", {
-    className: "text-sm text-stone-500 mb-4"
+    className: "noprint text-sm text-stone-500 mb-4"
   }, obra.direccion), /*#__PURE__*/React.createElement("div", { className: "noprint" }, /*#__PURE__*/React.createElement(RevitVinculoWidget, {
     obra: obra,
     setObra: setObra
@@ -3768,9 +3871,9 @@ function ObraView({
     className: `whitespace-nowrap flex items-center gap-1.5 px-3 py-2 text-sm border-b-2 -mb-px ${tab === k ? 'border-amber-600 text-stone-800 font-medium' : 'border-transparent text-stone-500 hover:text-stone-700'}`
   }, /*#__PURE__*/React.createElement(Icon, {
     size: 15
-  }), lbl))), mostrar('caratula') && /*#__PURE__*/React.createElement(Caratula, { obra: obra, setObra: setObra, motor: motor, cat: cat }), mostrar('planComputo') && /*#__PURE__*/React.createElement("div", { className: "seccion-informe" },
+  }), lbl))), mostrar('caratula') && /*#__PURE__*/React.createElement(Caratula, { obra: obra, setObra: setObra, motor: motor, cat: cat }), mostrar('planComputo') && /*#__PURE__*/React.createElement("div", { className: "seccion-informe", "data-titulo": "Planilla de cómputo" },
     /*#__PURE__*/React.createElement("div", { className: "flex items-center justify-between mb-3" },
-      /*#__PURE__*/React.createElement("div", { className: "text-sm text-stone-500" },
+      /*#__PURE__*/React.createElement("div", { className: "text-sm text-stone-500 ayuda-pantalla" },
         items.length, " ítem(s) en la obra · cómputo físico, sin precios"
       ),
       /*#__PURE__*/React.createElement("span", { className: "noprint" },
@@ -3824,8 +3927,8 @@ function ObraView({
         )
       )
     )
-  ), mostrar('computoMat') && /*#__PURE__*/React.createElement("div", { className: "seccion-informe" },
-    /*#__PURE__*/React.createElement("div", { className: "text-sm text-stone-500 mb-3" },
+  ), mostrar('computoMat') && /*#__PURE__*/React.createElement("div", { className: "seccion-informe", "data-titulo": "Cómputo de materiales" },
+    /*#__PURE__*/React.createElement("div", { className: "text-sm text-stone-500 mb-3 ayuda-pantalla" },
       explosion.length, " material(es) en uso · cantidades físicas agregadas de todos los Cómputos Unitarios × cantidad de obra · ",
       /*#__PURE__*/React.createElement("span", { className: "italic" }, "sin desperdicio, sin presentación comercial, sin precios")
     ),
@@ -3852,7 +3955,7 @@ function ObraView({
         )
       )
     )
-  ), mostrar('listaMat') && /*#__PURE__*/React.createElement("div", { className: "seccion-informe" }, /*#__PURE__*/React.createElement(Precios, { obra: obra, setObra: setObra, cat: cat, forceSub: 'mat' })), mostrar('portada') && /*#__PURE__*/React.createElement(Portada, { obra: obra }), mostrar('computo') && /*#__PURE__*/React.createElement("div", { className: "seccion-informe" }, /*#__PURE__*/React.createElement("div", {
+  ), mostrar('listaMat') && /*#__PURE__*/React.createElement("div", { className: "seccion-informe", "data-titulo": "Lista de materiales" }, /*#__PURE__*/React.createElement(Precios, { obra: obra, setObra: setObra, cat: cat, forceSub: 'mat' })), mostrar('portada') && /*#__PURE__*/React.createElement(Portada, { obra: obra }), mostrar('computo') && /*#__PURE__*/React.createElement("div", { className: "seccion-informe", "data-titulo": "Planilla de cotización" }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center justify-between mb-3"
   }, /*#__PURE__*/React.createElement("div", {
     className: "text-sm text-stone-500"
@@ -4062,7 +4165,7 @@ function ObraView({
     motor: motor,
     cat: cat,
     informeSecciones: informeSecciones
-  }), mostrar('presup') && /*#__PURE__*/React.createElement("div", { className: "seccion-informe" }, /*#__PURE__*/React.createElement("div", {
+  }), mostrar('presup') && /*#__PURE__*/React.createElement("div", { className: "seccion-informe", "data-titulo": "Presupuesto" }, /*#__PURE__*/React.createElement("div", {
     className: "text-sm text-stone-500 mb-3"
   }, "Precio de venta \u2014 coeficiente ", coef.toLocaleString('es-AR', {
     minimumFractionDigits: 4,
@@ -4157,7 +4260,7 @@ function ObraView({
       className: td + ' text-right font-mono text-stone-900'
     }, money(costoComercial * coef)), /*#__PURE__*/React.createElement("td", {
       className: td + ' text-right font-mono text-stone-700'
-    }, '100,0 %')))))), mostrar('explosion') && /*#__PURE__*/React.createElement("div", { className: "seccion-informe" }, /*#__PURE__*/React.createElement("div", {
+    }, '100,0 %')))))), mostrar('explosion') && /*#__PURE__*/React.createElement("div", { className: "seccion-informe", "data-titulo": "Explosión de insumos" }, /*#__PURE__*/React.createElement("div", {
     className: "text-sm text-stone-500 mb-3"
   }, "Listado de compras: cantidades t\xE9cnicas de cada material, con desperdicio y convertidas a presentaci\xF3n comercial."), explosion.length === 0 && /*#__PURE__*/React.createElement("div", {
     className: "bg-white border border-stone-300 rounded"
@@ -4182,7 +4285,15 @@ function ObraView({
     className: th + ' w-28'
   }, "Con desperdicio"), /*#__PURE__*/React.createElement("th", {
     className: th + ' w-40'
-  }, "A comprar"))), /*#__PURE__*/React.createElement("tbody", null, explosion.map(e => /*#__PURE__*/React.createElement("tr", {
+  }, "A comprar"), /*#__PURE__*/React.createElement("th", {
+    className: th + ' w-28 text-right', title: 'Precio unitario de la Presentación 1 (palet) c/IVA'
+  }, "Precio P1"), /*#__PURE__*/React.createElement("th", {
+    className: th + ' w-28 text-right', title: 'Precio unitario de la Presentación 2 (suelto) c/IVA'
+  }, "Precio P2"), /*#__PURE__*/React.createElement("th", {
+    className: th + ' w-32 text-right bg-amber-100 font-semibold', title: 'Total a pagar al proveedor = comp1×PrecioP1 + comp2×PrecioP2 (c/IVA)'
+  }, "Total compra $"), /*#__PURE__*/React.createElement("th", {
+    className: th + ' w-40'
+  }, "Proveedor"))), /*#__PURE__*/React.createElement("tbody", null, explosion.map(e => /*#__PURE__*/React.createElement("tr", {
     key: e.cod,
     className: "hover:bg-stone-50"
   }, /*#__PURE__*/React.createElement("td", {
@@ -4199,7 +4310,15 @@ function ObraView({
     className: td + ' text-right font-mono text-stone-700'
   }, fmtN(e.conDesp)), /*#__PURE__*/React.createElement("td", {
     className: td + ' text-right font-mono text-stone-800'
-  }, e.pres1 && e.comp1 !== '' ? /*#__PURE__*/React.createElement("span", null, fmtN(e.comp1), " ", e.pres1, e.pres2 && e.comp2 ? ' + ' + fmtN(e.comp2) + ' ' + e.pres2 : '') : /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("span", { className: "noprint text-stone-400 text-xs" }, "cargar presentaci\xF3n en Materiales"), /*#__PURE__*/React.createElement("span", { className: "print-only text-stone-500" }, "\u2014"))))))))), mostrar('mo') && /*#__PURE__*/React.createElement("div", { className: "seccion-informe" },
+  }, e.pres1 && e.comp1 !== '' ? /*#__PURE__*/React.createElement("span", null, fmtN(e.comp1), " ", e.pres1, e.pres2 && e.comp2 ? ' + ' + fmtN(e.comp2) + ' ' + e.pres2 : '') : /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("span", { className: "noprint text-stone-400 text-xs" }, "cargar presentaci\xF3n en Materiales"), /*#__PURE__*/React.createElement("span", { className: "print-only text-stone-500" }, "\u2014"))), /*#__PURE__*/React.createElement("td", {
+    className: td + ' text-right font-mono text-stone-700'
+  }, e.precioP1 > 0 ? money(e.precioP1) : /*#__PURE__*/React.createElement("span", { className: "text-stone-300" }, "\u2014")), /*#__PURE__*/React.createElement("td", {
+    className: td + ' text-right font-mono text-stone-700'
+  }, e.precioP2 > 0 ? money(e.precioP2) : /*#__PURE__*/React.createElement("span", { className: "text-stone-300" }, "\u2014")), /*#__PURE__*/React.createElement("td", {
+    className: td + ' text-right font-mono font-semibold bg-amber-50'
+  }, e.totalCompraPesos > 0 ? money(e.totalCompraPesos) : /*#__PURE__*/React.createElement("span", { className: "text-stone-300" }, "\u2014")), /*#__PURE__*/React.createElement("td", {
+    className: td + ' text-stone-600 text-xs'
+  }, e.proveedor || /*#__PURE__*/React.createElement("span", { className: "text-stone-300" }, "\u2014")))))))), mostrar('mo') && /*#__PURE__*/React.createElement("div", { className: "seccion-informe", "data-titulo": "Mano de obra" },
     !informeSecciones && /*#__PURE__*/React.createElement("div", { className: "noprint flex gap-1 border-b border-stone-200 mb-3" },
       [['precios', 'Precios'], ['analisis', 'Análisis']].map(([k, lbl]) =>
         /*#__PURE__*/React.createElement("button", {
@@ -4217,7 +4336,7 @@ function ObraView({
       cat: cat,
       informeSecciones: informeSecciones
     })
-  ), mostrar('herr') && /*#__PURE__*/React.createElement("div", { className: "seccion-informe" },
+  ), mostrar('herr') && /*#__PURE__*/React.createElement("div", { className: "seccion-informe", "data-titulo": "Herramientas" },
     !informeSecciones && /*#__PURE__*/React.createElement("div", { className: "noprint flex gap-1 border-b border-stone-200 mb-3" },
       [['precios', 'Precios'], ['analisis', 'Análisis']].map(([k, lbl]) =>
         /*#__PURE__*/React.createElement("button", {
@@ -4229,17 +4348,17 @@ function ObraView({
     ),
     (informeSecciones || subHerr === 'precios') && /*#__PURE__*/React.createElement(Precios, { obra: obra, setObra: setObra, cat: cat, forceSub: 'herr' }),
     (informeSecciones || subHerr === 'analisis') && /*#__PURE__*/React.createElement("div", { className: "bg-amber-50 border border-amber-200 rounded p-4 text-sm text-amber-900" }, /*#__PURE__*/React.createElement("div", { className: "font-medium mb-1" }, "Análisis de herramientas"), /*#__PURE__*/React.createElement("div", null, "Pendiente — incluirá horas, incidencia y amortización de equipos por obra. Por ahora cargá precios en la sub-tab Precios."))
-  ), mostrar('plan') && /*#__PURE__*/React.createElement("div", { className: "seccion-informe" }, /*#__PURE__*/React.createElement(PlanTrabajo, {
+  ), mostrar('plan') && /*#__PURE__*/React.createElement("div", { className: "seccion-informe seccion-apaisada", "data-titulo": "Plan de trabajo" }, /*#__PURE__*/React.createElement(PlanTrabajo, {
     planData: planData,
     setPlanCfg: setPlanCfg,
     setHsSem: setHsSem
-  })), mostrar('curva') && /*#__PURE__*/React.createElement("div", { className: "seccion-informe" }, /*#__PURE__*/React.createElement(CurvaInversion, {
+  })), mostrar('curva') && /*#__PURE__*/React.createElement("div", { className: "seccion-informe seccion-apaisada", "data-titulo": "Curva de inversión" }, /*#__PURE__*/React.createElement(CurvaInversion, {
     planData: planData
-  })), mostrar('camino') && /*#__PURE__*/React.createElement("div", { className: "seccion-informe" }, /*#__PURE__*/React.createElement(CaminoCritico, {
+  })), mostrar('camino') && /*#__PURE__*/React.createElement("div", { className: "seccion-informe seccion-apaisada", "data-titulo": "Camino crítico" }, /*#__PURE__*/React.createElement(CaminoCritico, {
     planData: planData
   })), mostrar('suministro') && (informeSecciones
     ? /*#__PURE__*/React.createElement(React.Fragment, null,
-        ['rubro', 'gantt', 'semana', 'mes', 'check', 'saldo'].map(v => /*#__PURE__*/React.createElement("div", { key: v, className: "seccion-informe" },
+        ['rubro', 'gantt', 'semana', 'mes', 'check', 'saldo'].map(v => /*#__PURE__*/React.createElement("div", { key: v, className: "seccion-informe" + (v === 'gantt' ? ' seccion-apaisada' : '') },
           /*#__PURE__*/React.createElement(PlanSuministro, { obra: obra, planData: planData, motor: motor, vistaForzada: v })
         ))
       )
@@ -7964,6 +8083,30 @@ function Precios({ obra, setObra, cat, forceSub }) {
     return '';
   };
 
+  // Hito 1: precio de la PRESENTACIÓN 2 (ej: ladrillo suelto), con IVA.
+  // Se guarda por obra en obra.precios.materialesPres2ConIVA[cod].
+  // NO entra en β (β sale solo de pres1). Se usará en la Explosión comercial (Hito 2).
+  const setPrecioPres2ConIVA = (cod, val) => {
+    const next = { ...obra };
+    const prec = { ...(next.precios || {}) };
+    const seccion = { ...(prec.materialesPres2ConIVA || {}) };
+    if (val === '' || val === null || val === undefined || (typeof val === 'string' && val.trim() === '')) {
+      delete seccion[cod];
+    } else {
+      seccion[cod] = Number(val) || 0;
+    }
+    prec.materialesPres2ConIVA = seccion;
+    next.precios = prec;
+    setObra(next);
+  };
+
+  const getPrecioPres2ConIVA = (cod) => {
+    const prec = obra.precios || {};
+    const m = prec.materialesPres2ConIVA || {};
+    if (cod in m && m[cod] !== '' && m[cod] !== null && m[cod] !== undefined) return m[cod];
+    return '';
+  };
+
   const setProveedor = (tipoKey, cod, val) => {
     const next = { ...obra };
     const prov = { ...(next.proveedores || {}) };
@@ -8070,18 +8213,20 @@ function Precios({ obra, setObra, cat, forceSub }) {
             e('th', { className: th }, 'Descripción'),
             e('th', { className: th + ' text-right' }, 'Unidad'),
             e('th', { className: th + ' text-right' }, 'Precio genérico'),
-            e('th', { className: th + ' text-right' }, 'Precio sin IVA'),
-            e('th', { className: th + ' text-right' }, 'Precio CON IVA (21%)'),
+            e('th', { className: th + ' text-right', title: 'Precio sin IVA de la Presentación 1 (autocalculado ÷1.21)' }, 'Precio P1 s/IVA'),
+            e('th', { className: th + ' text-right', title: 'Precio de la Presentación 1 (ej: palet) CON IVA — el que carga el corralón' }, 'Precio P1 c/IVA'),
             e('th', { className: th + ' text-right w-20', title: 'Desperdicio (%) — override de obra' }, 'Desp %'),
-            e('th', { className: th + ' w-24', title: 'Presentación comercial 1 (ej: bolsa 50kg) — override de obra' }, 'Pres 1'),
+            e('th', { className: th + ' w-24', title: 'Presentación comercial 1 (ej: palet 300u) — override de obra' }, 'Pres 1'),
             e('th', { className: th + ' text-right w-20', title: 'Factor de conversión 1 (unidades físicas por presentación 1)' }, 'Fac 1'),
-            e('th', { className: th + ' w-24', title: 'Presentación comercial 2 (opcional) — override de obra' }, 'Pres 2'),
+            e('th', { className: th + ' w-24', title: 'Presentación comercial 2 (opcional, ej: ladrillo suelto) — override de obra' }, 'Pres 2'),
             e('th', { className: th + ' text-right w-20', title: 'Factor de conversión 2 (opcional)' }, 'Fac 2'),
+            e('th', { className: th + ' text-right', title: 'Precio de la Presentación 2 CON IVA (opcional, ej: ladrillo suelto). No afecta el precio teórico β.' }, 'Precio P2 c/IVA'),
+            e('th', { className: th + ' text-right bg-amber-100 font-semibold', title: 'Precio teórico por unidad física = Precio P1 c/IVA ÷ Fac 1. Es el que alimenta cotización y presupuesto.' }, 'β teórico'),
             e('th', { className: th + ' w-48' }, 'Proveedor')
           )),
           e('tbody', null, divsOrdenadas.map(divNombre => e(React.Fragment, { key: 'div-' + divNombre },
             e('tr', { className: divisionRowClass },
-              e('td', { className: td + ' font-semibold uppercase tracking-wide text-xs', colSpan: 12 }, divNombre)
+              e('td', { className: td + ' font-semibold uppercase tracking-wide text-xs', colSpan: 14 }, divNombre)
             ),
             grupos[divNombre].map(m => {
               const precioGenerico = Number(m.precio) || 0;
@@ -8135,6 +8280,21 @@ function Precios({ obra, setObra, cat, forceSub }) {
                   e(EditCell, { value: valFac2, type: 'number', align: 'right', placeholder: m.fac2 || '',
                     onCommit: v => setMatConfig(m.cod, 'fac2', v) })
                 ),
+                e('td', { className: td },
+                  e(EditMoney, {
+                    value: getPrecioPres2ConIVA(m.cod),
+                    align: 'right',
+                    onCommit: v => setPrecioPres2ConIVA(m.cod, v)
+                  })
+                ),
+                (() => {
+                  // β teórico = Precio P1 c/IVA ÷ Fac 1 (precio por unidad física)
+                  const p1 = Number(getValorConIVA('materiales', m.cod)) || 0;
+                  const f1 = Number(valFac1) || 0;
+                  const beta = (p1 > 0) ? (f1 > 0 ? p1 / f1 : p1) : 0;
+                  return e('td', { className: td + ' text-right font-mono bg-amber-50' },
+                    beta > 0 ? money(r2(beta)) : e('span', { className: 'text-stone-300' }, '—'));
+                })(),
                 e('td', { className: td },
                   e(EditCell, {
                     value: proveedor,
