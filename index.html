@@ -212,31 +212,29 @@ html, body, button, input, select, textarea {
 
   @page { margin: 1.8cm 1.5cm 1.8cm 1.5cm; }
 
-  /* 3-bis Punto 4 — APAISADO SOLO DEL GRAFICO.
-     La tabla de datos queda VERTICAL fluyendo normal. Solo el contenedor del
-     grafico (data-tip-container) se manda a su propia hoja y se rota 90deg,
-     escalado para llenar el alto de la hoja. Asi tabla legible vertical + grafico
-     grande apaisado en hoja aparte. */
+  /* 3-bis Punto 4 — Titulo horizontal + grafico apaisado en la MISMA hoja.
+     La SECCION entera salta a hoja nueva (asi el titulo de seccion va con su
+     grafico). El titulo queda arriba horizontal normal; el grafico se rota abajo. */
   .seccion-apaisada {
-    page-break-inside: auto !important;
-    break-inside: auto !important;
-  }
-  /* El grafico salta a su propia hoja y se rota.
-     Marcamos con clase .grafico-apaisar (insertada en el JS de cada grafico) para
-     controlar exactamente que se rota, sin depender de data-tip-container (la
-     curva y el camino usan recharts y no lo tienen). */
-  .grafico-apaisar {
     page-break-before: always !important;
     page-break-after: always !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
+    position: relative !important;
+    height: 23cm;          /* altura de hoja para contener el grafico absoluto + titulo */
+  }
+  /* El grafico se rota dentro de la hoja, SIN saltar el solo (asi queda con su
+     titulo de seccion arriba). Se posiciona absoluto para no empujar al titulo. */
+  .grafico-apaisar {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
     transform: rotate(90deg);
     transform-origin: top left;
-    position: relative;
-    top: 0;
-    left: 17.5cm;          /* empuja el bloque rotado desde el margen izquierdo */
-    width: 23cm;           /* tras rotar = alto util de la hoja (gran horizontal) */
-    height: 17cm;          /* tras rotar = ancho util de la hoja */
+    position: absolute;
+    top: 3cm;              /* deja espacio arriba para el titulo horizontal de seccion */
+    left: 18cm;            /* empuja el bloque rotado desde el margen izquierdo */
+    width: 20cm;           /* tras rotar = alto util disponible bajo el titulo */
+    height: 16.5cm;        /* tras rotar = ancho util de la hoja */
     max-width: none !important;
     box-sizing: border-box;
   }
@@ -5060,10 +5058,10 @@ function CaminoCritico({
               position: 'absolute',
               left: (b.inicio - 1) / plazo * 100 + '%',
               width: (b.finTardio - b.inicio + 1) / plazo * 100 + '%',
-              top: '1px',
-              height: '20px',
-              backgroundColor: '#93c5fd',
-              border: '2px solid #1d4ed8',
+              top: '0px',
+              height: '22px',
+              backgroundColor: '#bfdbfe',
+              border: '2.5px solid #1d4ed8',
               borderRadius: '3px'
             },
             title: 'Holgura disponible: ' + b.holgura + ' sem'
