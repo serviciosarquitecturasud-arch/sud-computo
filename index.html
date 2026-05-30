@@ -218,31 +218,14 @@ html, body, button, input, select, textarea {
 
   @page { margin: 1.8cm 1.5cm 1.8cm 1.5cm; }
 
-  /* 3-bis Punto 4 — APAISADO solo del Gantt del Plan de trabajo.
-     La seccion fluye normal; solo el grafico (.grafico-apaisar) salta a su propia
-     hoja y se rota 90deg. Curva, Camino y Suministro quedan verticales. */
+  /* Apaisado de graficos descartado: tras varias pruebas, el Gantt no respondia
+     de forma confiable a la rotacion/escalado por CSS. Todos los graficos (Plan,
+     Curva, Camino, Suministro) se imprimen en VERTICAL, que es legible y prolijo.
+     La clase .seccion-apaisada queda neutra (no fuerza rotacion). */
   .seccion-apaisada {
     page-break-inside: auto !important;
     break-inside: auto !important;
   }
-  .grafico-apaisar {
-    page-break-before: always !important;
-    page-break-after: always !important;
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
-    transform: rotate(90deg);
-    transform-origin: top left;
-    position: absolute;
-    top: 0;
-    left: 17.4cm;          /* = alto util de la hoja: tras rotar, el bloque entra desde aqui */
-    width: 25cm;           /* tras rotar = largo de la hoja apaisada (el Gantt flex se expande a esto) */
-    height: 17.4cm;        /* tras rotar = alto de la hoja apaisada */
-    max-width: none !important;
-    box-sizing: border-box;
-  }
-  /* El contenedor de la seccion del Gantt debe poder alojar el grafico absoluto */
-  .seccion-apaisada { position: relative !important; min-height: 25cm; }
-  .grafico-apaisar > * { max-width: 100% !important; }
 }
 /* En pantalla: ocultar pie del informe (solo visible al imprimir) */
 .informe-pie { display: none; }
@@ -4602,7 +4585,7 @@ function PlanTrabajo({
 
     return React.createElement("div", {
       'data-tip-container': true,
-      className: "mt-4 p-4 grafico-apaisar",
+      className: "mt-4 p-4",
       style: { backgroundColor: '#ffffff', border: '1px solid #d6d3d1', borderRadius: '4px', position: 'relative' }
     },
       React.createElement("div", { className: "flex items-baseline justify-between mb-3" },
