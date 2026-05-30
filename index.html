@@ -10078,22 +10078,24 @@ function App() {
       setInformeSecciones(secciones);
       // Esperar render de TODAS las secciones (incluye 6 instancias de PlanSuministro si está marcado)
       setTimeout(() => {
-        window.print();
-        // Limpiar tras imprimir. afterprint es poco fiable (no siempre dispara si
-        // se cancela el preview), asi que agregamos respaldo por focus: cuando el
-        // dialogo de impresion se cierra, la ventana recupera el foco -> reseteamos.
-        // El focus se protege con un retardo para no cortar el render antes de imprimir.
+        // matchMedia('print') es el metodo confiable en Chrome para detectar cuando
+        // se SALE del modo impresion (afterprint y focus no disparan al cancelar el
+        // preview). Al volver matches=false reseteamos el modo informe.
         let limpiado = false;
         const cleanup = () => {
           if (limpiado) return;
           limpiado = true;
           setInformeSecciones(null);
           window.removeEventListener('afterprint', cleanup);
-          window.removeEventListener('focus', onFocus);
+          if (mql && mql.removeEventListener) mql.removeEventListener('change', onMqlChange);
         };
-        const onFocus = () => { setTimeout(cleanup, 300); };
+        const mql = window.matchMedia('print');
+        const onMqlChange = (e) => { if (!e.matches) setTimeout(cleanup, 200); };
+        if (mql.addEventListener) mql.addEventListener('change', onMqlChange);
         window.addEventListener('afterprint', cleanup);
-        window.addEventListener('focus', onFocus);
+        // Respaldo final: si nada disparo en 60s, limpiar igual (evita quedar pegado).
+        setTimeout(cleanup, 60000);
+        window.print();
       }, 800);
     }
   })), driveRecovery.showModal && /*#__PURE__*/React.createElement(DriveRecoveryModal, {
