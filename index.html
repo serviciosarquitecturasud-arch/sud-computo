@@ -238,6 +238,15 @@ html, body, button, input, select, textarea {
     width: 23cm;           /* tras rotar = alto util de la hoja (gran horizontal) */
     height: 17cm;          /* tras rotar = ancho util de la hoja */
     max-width: none !important;
+    box-sizing: border-box;
+  }
+  /* El contenido interno del grafico no debe exceder el ancho del contenedor rotado */
+  .grafico-apaisar > * { max-width: 100% !important; }
+  /* Gantt de suministro: la columna fija de texto (320px) es muy ancha para el
+     apaisado. La reducimos en impresion para que el conjunto entre en la hoja. */
+  .grafico-apaisar div[style*="width: 320px"] {
+    width: 180px !important;
+    flex-basis: 180px !important;
   }
 }
 /* En pantalla: ocultar pie del informe (solo visible al imprimir) */
@@ -4867,7 +4876,7 @@ function CurvaInversion({
   return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "text-sm text-stone-500 mb-3"
   }, "Curva de avance f\xEDsico-financiero previsto, derivada del Plan de trabajo."), /*#__PURE__*/React.createElement("div", {
-    className: "bg-white border border-stone-300 rounded p-4 mb-4"
+    className: "bg-white border border-stone-300 rounded p-4 mb-4 grafico-apaisar"
   }, /*#__PURE__*/React.createElement("h4", {
     className: "text-xs uppercase tracking-wider text-stone-500 font-semibold mb-2"
   }, "% acumulado por semana"), /*#__PURE__*/React.createElement(SvgLineChart, {
@@ -5009,6 +5018,7 @@ function CaminoCritico({
   }, "CR\xCDTICO") : '')))))),
   // === H11.2: Gantt del Camino Crítico ===
   plazo > 0 && React.createElement("div", {
+    className: "grafico-apaisar",
     style: {
       backgroundColor: '#ffffff',
       border: '1px solid #d6d3d1',
@@ -5052,8 +5062,8 @@ function CaminoCritico({
               width: (b.finTardio - b.inicio + 1) / plazo * 100 + '%',
               top: '1px',
               height: '20px',
-              backgroundColor: 'rgba(37, 99, 235, 0.30)',
-              border: '1.5px solid #2563eb',
+              backgroundColor: '#93c5fd',
+              border: '2px solid #1d4ed8',
               borderRadius: '3px'
             },
             title: 'Holgura disponible: ' + b.holgura + ' sem'
@@ -5085,7 +5095,7 @@ function CaminoCritico({
         React.createElement("span", { style: { width: '12px', height: '12px', backgroundColor: '#2563eb', borderRadius: '3px', display: 'inline-block' } }),
         "Tarea (con holgura)"),
       React.createElement("span", { style: { display: 'flex', alignItems: 'center', gap: '4px' } },
-        React.createElement("span", { style: { width: '12px', height: '12px', backgroundColor: 'rgba(37, 99, 235, 0.30)', border: '1.5px solid #2563eb', borderRadius: '3px', display: 'inline-block' } }),
+        React.createElement("span", { style: { width: '12px', height: '12px', backgroundColor: '#93c5fd', border: '2px solid #1d4ed8', borderRadius: '3px', display: 'inline-block' } }),
         "Holgura disponible (puede correrse)")
     )
   ), /*#__PURE__*/React.createElement("p", {
@@ -5929,6 +5939,7 @@ function PlanSuministro({ obra, planData, motor, vistaForzada }) {
         e('div', { className: 'text-sm text-stone-600 mb-3' },
           'Lectura rápida por tarea: cuándo arranca, qué materiales tener listos y la barra temporal. Pasá el cursor sobre las barras para ver cantidades.'),
         e('div', {
+          className: 'grafico-apaisar',
           style: { backgroundColor: '#ffffff', border: '1px solid #d6d3d1', borderRadius: '4px', padding: '12px' }
         },
           // EJE X arriba: meses (fila 1) + semanas (fila 2)
