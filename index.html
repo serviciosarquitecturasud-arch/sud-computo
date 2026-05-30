@@ -195,17 +195,18 @@ html, body, button, input, select, textarea {
   /* Footer con datos del estudio repetido — eliminado en HITO 27.B.11
      (la info contacto va en el pie del documento al final del informe) */
 
-  /* Checklist heredado: salto de página entre hojas */
+  /* Checklist por rubro: fluyen continuos (varios por hoja, sin desperdicio)
+     pero un checklist NO se parte a la mitad entre dos paginas. */
   .checklist-hoja {
-    page-break-after: always !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
     border: none !important;
     box-shadow: none !important;
     background: white !important;
     padding: 0 !important;
-    margin: 0 0 1cm 0 !important;
+    margin: 0 0 0.8cm 0 !important;
     position: relative !important;
   }
-  .checklist-hoja:last-child { page-break-after: auto !important; }
 
   /* Watermark gráfico SUD — eliminado en HITO 27.E.6 (movido al pie del documento) */
 
