@@ -230,13 +230,12 @@ html, body, button, input, select, textarea {
     page-break-after: always !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
-    transform: rotate(90deg);
+    transform: rotate(90deg) scale(1.35);
     transform-origin: top left;
     position: relative;
     top: 0;
-    left: 18cm;            /* empuja el bloque rotado desde el margen izquierdo */
-    width: 25.5cm;         /* tras rotar = alto util A4 apaisado (llena la hoja a lo largo) */
-    height: 17.5cm;        /* tras rotar = ancho util A4 apaisado (llena la hoja a lo ancho) */
+    left: 19cm;            /* desplazamiento ajustado por el scale */
+    width: 18cm;           /* ancho base del grafico antes de escalar */
     max-width: none !important;
     box-sizing: border-box;
   }
