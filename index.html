@@ -212,29 +212,33 @@ html, body, button, input, select, textarea {
 
   @page { margin: 1.8cm 1.5cm 1.8cm 1.5cm; }
 
-  /* 3-bis Punto 4 — APAISADO REAL por rotacion transform.
-     El @page landscape no funciona (Chrome lo ignora con @page global). Rotamos
-     el contenido 90deg dentro de la hoja vertical. Area util A4 (margen 1.8/1.5):
-     ancho ~17.7cm, alto ~23.7cm. Al rotar, el grafico usa el ALTO como su ancho. */
+  /* 3-bis Punto 4 — APAISADO SOLO DEL GRAFICO.
+     La tabla de datos queda VERTICAL fluyendo normal. Solo el contenedor del
+     grafico (data-tip-container) se manda a su propia hoja y se rota 90deg,
+     escalado para llenar el alto de la hoja. Asi tabla legible vertical + grafico
+     grande apaisado en hoja aparte. */
   .seccion-apaisada {
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+  }
+  /* El grafico salta a su propia hoja y se rota.
+     Marcamos con clase .grafico-apaisar (insertada en el JS de cada grafico) para
+     controlar exactamente que se rota, sin depender de data-tip-container (la
+     curva y el camino usan recharts y no lo tienen). */
+  .grafico-apaisar {
     page-break-before: always !important;
     page-break-after: always !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
-    height: 17cm;            /* alto de la hoja vertical disponible para el bloque rotado */
-    position: relative !important;
-    overflow: visible !important;
-  }
-  .seccion-apaisada > * {
     transform: rotate(90deg);
     transform-origin: top left;
-    position: absolute;
+    position: relative;
     top: 0;
-    left: 17.5cm;            /* desplaza el bloque rotado para que entre desde el margen izq */
-    width: 23.5cm;           /* tras rotar = alto de la hoja (lectura horizontal larga) */
+    left: 17.5cm;          /* empuja el bloque rotado desde el margen izquierdo */
+    width: 23cm;           /* tras rotar = alto util de la hoja (gran horizontal) */
+    height: 17cm;          /* tras rotar = ancho util de la hoja */
+    max-width: none !important;
   }
-  .seccion-apaisada [data-tip-container] { max-width: 100% !important; width: 100% !important; }
-  .seccion-apaisada .overflow-x-auto { overflow: visible !important; }
 }
 /* En pantalla: ocultar pie del informe (solo visible al imprimir) */
 .informe-pie { display: none; }
@@ -4594,7 +4598,7 @@ function PlanTrabajo({
 
     return React.createElement("div", {
       'data-tip-container': true,
-      className: "mt-4 p-4",
+      className: "mt-4 p-4 grafico-apaisar",
       style: { backgroundColor: '#ffffff', border: '1px solid #d6d3d1', borderRadius: '4px', position: 'relative' }
     },
       React.createElement("div", { className: "flex items-baseline justify-between mb-3" },
