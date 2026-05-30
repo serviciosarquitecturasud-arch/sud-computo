@@ -71,6 +71,12 @@ html, body, button, input, select, textarea {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
+  /* Camino critico: sus barras (holgura celeste, critico rojo) estan fuera de
+     data-tip-container. Protegemos su color por el borde azul/rojo caracteristico. */
+  [style*="#bfdbfe"], [style*="#1d4ed8"], [style*="#dc2626"] {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
 
   /* Override de fondos grises sutiles inline (#f5f5f4 en headers de mes,
      #fafaf9 en fondo de filas del Gantt) — consumen tinta sin aportar. */
@@ -228,9 +234,9 @@ html, body, button, input, select, textarea {
     transform-origin: top left;
     position: relative;
     top: 0;
-    left: 17.5cm;          /* empuja el bloque rotado desde el margen izquierdo */
-    width: 23cm;           /* tras rotar = alto util de la hoja (gran horizontal) */
-    height: 17cm;          /* tras rotar = ancho util de la hoja */
+    left: 18cm;            /* empuja el bloque rotado desde el margen izquierdo */
+    width: 25.5cm;         /* tras rotar = alto util A4 apaisado (llena la hoja a lo largo) */
+    height: 17.5cm;        /* tras rotar = ancho util A4 apaisado (llena la hoja a lo ancho) */
     max-width: none !important;
     box-sizing: border-box;
   }
@@ -5050,7 +5056,9 @@ function CaminoCritico({
               height: '22px',
               backgroundColor: '#bfdbfe',
               border: '2.5px solid #1d4ed8',
-              borderRadius: '3px'
+              borderRadius: '3px',
+              WebkitPrintColorAdjust: 'exact',
+              printColorAdjust: 'exact'
             },
             title: 'Holgura disponible: ' + b.holgura + ' sem'
           }),
