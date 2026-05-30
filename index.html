@@ -212,40 +212,29 @@ html, body, button, input, select, textarea {
 
   @page { margin: 1.8cm 1.5cm 1.8cm 1.5cm; }
 
-  /* 3-bis Punto 4 — Titulo horizontal + grafico apaisado en la MISMA hoja.
-     La SECCION entera salta a hoja nueva (asi el titulo de seccion va con su
-     grafico). El titulo queda arriba horizontal normal; el grafico se rota abajo. */
+  /* 3-bis Punto 4 — APAISADO solo del Gantt del Plan de trabajo.
+     La seccion fluye normal; solo el grafico (.grafico-apaisar) salta a su propia
+     hoja y se rota 90deg. Curva, Camino y Suministro quedan verticales. */
   .seccion-apaisada {
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+  }
+  .grafico-apaisar {
     page-break-before: always !important;
     page-break-after: always !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
-    position: relative !important;
-    height: 23cm;          /* altura de hoja para contener el grafico absoluto + titulo */
-  }
-  /* El grafico se rota dentro de la hoja, SIN saltar el solo (asi queda con su
-     titulo de seccion arriba). Se posiciona absoluto para no empujar al titulo. */
-  .grafico-apaisar {
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
     transform: rotate(90deg);
     transform-origin: top left;
-    position: absolute;
-    top: 3cm;              /* deja espacio arriba para el titulo horizontal de seccion */
-    left: 18cm;            /* empuja el bloque rotado desde el margen izquierdo */
-    width: 20cm;           /* tras rotar = alto util disponible bajo el titulo */
-    height: 16.5cm;        /* tras rotar = ancho util de la hoja */
+    position: relative;
+    top: 0;
+    left: 17.5cm;          /* empuja el bloque rotado desde el margen izquierdo */
+    width: 23cm;           /* tras rotar = alto util de la hoja (gran horizontal) */
+    height: 17cm;          /* tras rotar = ancho util de la hoja */
     max-width: none !important;
     box-sizing: border-box;
   }
-  /* El contenido interno del grafico no debe exceder el ancho del contenedor rotado */
   .grafico-apaisar > * { max-width: 100% !important; }
-  /* Gantt de suministro: la columna fija de texto (320px) es muy ancha para el
-     apaisado. La reducimos en impresion para que el conjunto entre en la hoja. */
-  .grafico-apaisar div[style*="width: 320px"] {
-    width: 180px !important;
-    flex-basis: 180px !important;
-  }
 }
 /* En pantalla: ocultar pie del informe (solo visible al imprimir) */
 .informe-pie { display: none; }
@@ -4376,9 +4365,9 @@ function ObraView({
     planData: planData,
     setPlanCfg: setPlanCfg,
     setHsSem: setHsSem
-  })), mostrar('curva') && /*#__PURE__*/React.createElement("div", { className: "seccion-informe seccion-apaisada", "data-titulo": "Curva de inversión" }, /*#__PURE__*/React.createElement(CurvaInversion, {
+  })), mostrar('curva') && /*#__PURE__*/React.createElement("div", { className: "seccion-informe", "data-titulo": "Curva de inversión" }, /*#__PURE__*/React.createElement(CurvaInversion, {
     planData: planData
-  })), mostrar('camino') && /*#__PURE__*/React.createElement("div", { className: "seccion-informe seccion-apaisada", "data-titulo": "Camino crítico" }, /*#__PURE__*/React.createElement(CaminoCritico, {
+  })), mostrar('camino') && /*#__PURE__*/React.createElement("div", { className: "seccion-informe", "data-titulo": "Camino crítico" }, /*#__PURE__*/React.createElement(CaminoCritico, {
     planData: planData
   })), mostrar('suministro') && (informeSecciones
     ? /*#__PURE__*/React.createElement(React.Fragment, null,
@@ -4874,7 +4863,7 @@ function CurvaInversion({
   return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "text-sm text-stone-500 mb-3"
   }, "Curva de avance f\xEDsico-financiero previsto, derivada del Plan de trabajo."), /*#__PURE__*/React.createElement("div", {
-    className: "bg-white border border-stone-300 rounded p-4 mb-4 grafico-apaisar"
+    className: "bg-white border border-stone-300 rounded p-4 mb-4"
   }, /*#__PURE__*/React.createElement("h4", {
     className: "text-xs uppercase tracking-wider text-stone-500 font-semibold mb-2"
   }, "% acumulado por semana"), /*#__PURE__*/React.createElement(SvgLineChart, {
@@ -5016,7 +5005,6 @@ function CaminoCritico({
   }, "CR\xCDTICO") : '')))))),
   // === H11.2: Gantt del Camino Crítico ===
   plazo > 0 && React.createElement("div", {
-    className: "grafico-apaisar",
     style: {
       backgroundColor: '#ffffff',
       border: '1px solid #d6d3d1',
@@ -5937,7 +5925,6 @@ function PlanSuministro({ obra, planData, motor, vistaForzada }) {
         e('div', { className: 'text-sm text-stone-600 mb-3' },
           'Lectura rápida por tarea: cuándo arranca, qué materiales tener listos y la barra temporal. Pasá el cursor sobre las barras para ver cantidades.'),
         e('div', {
-          className: 'grafico-apaisar',
           style: { backgroundColor: '#ffffff', border: '1px solid #d6d3d1', borderRadius: '4px', padding: '12px' }
         },
           // EJE X arriba: meses (fila 1) + semanas (fila 2)
