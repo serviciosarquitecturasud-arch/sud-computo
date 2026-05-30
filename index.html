@@ -212,14 +212,26 @@ html, body, button, input, select, textarea {
 
   @page { margin: 1.8cm 1.5cm 1.8cm 1.5cm; }
 
-  /* 3-bis Punto 4 — Apaisado de graficos. Se calibra con pruebas reales.
-     Por ahora: el grafico ocupa su propia hoja (salto antes/despues) en vertical,
-     a la espera de validar el metodo de rotacion con tus capturas. */
+  /* 3-bis Punto 4 — APAISADO REAL por rotacion transform.
+     El @page landscape no funciona (Chrome lo ignora con @page global). Rotamos
+     el contenido 90deg dentro de la hoja vertical. Area util A4 (margen 1.8/1.5):
+     ancho ~17.7cm, alto ~23.7cm. Al rotar, el grafico usa el ALTO como su ancho. */
   .seccion-apaisada {
     page-break-before: always !important;
     page-break-after: always !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
+    height: 17cm;            /* alto de la hoja vertical disponible para el bloque rotado */
+    position: relative !important;
+    overflow: visible !important;
+  }
+  .seccion-apaisada > * {
+    transform: rotate(90deg);
+    transform-origin: top left;
+    position: absolute;
+    top: 0;
+    left: 17.5cm;            /* desplaza el bloque rotado para que entre desde el margen izq */
+    width: 23.5cm;           /* tras rotar = alto de la hoja (lectura horizontal larga) */
   }
   .seccion-apaisada [data-tip-container] { max-width: 100% !important; width: 100% !important; }
   .seccion-apaisada .overflow-x-auto { overflow: visible !important; }
@@ -5036,8 +5048,8 @@ function CaminoCritico({
               width: (b.finTardio - b.inicio + 1) / plazo * 100 + '%',
               top: '1px',
               height: '20px',
-              backgroundColor: 'rgba(37, 99, 235, 0.15)',
-              border: '1px dashed rgba(37, 99, 235, 0.4)',
+              backgroundColor: 'rgba(37, 99, 235, 0.30)',
+              border: '1.5px solid #2563eb',
               borderRadius: '3px'
             },
             title: 'Holgura disponible: ' + b.holgura + ' sem'
@@ -5069,7 +5081,7 @@ function CaminoCritico({
         React.createElement("span", { style: { width: '12px', height: '12px', backgroundColor: '#2563eb', borderRadius: '3px', display: 'inline-block' } }),
         "Tarea (con holgura)"),
       React.createElement("span", { style: { display: 'flex', alignItems: 'center', gap: '4px' } },
-        React.createElement("span", { style: { width: '12px', height: '12px', backgroundColor: 'rgba(37, 99, 235, 0.15)', border: '1px dashed rgba(37, 99, 235, 0.4)', borderRadius: '3px', display: 'inline-block' } }),
+        React.createElement("span", { style: { width: '12px', height: '12px', backgroundColor: 'rgba(37, 99, 235, 0.30)', border: '1.5px solid #2563eb', borderRadius: '3px', display: 'inline-block' } }),
         "Holgura disponible (puede correrse)")
     )
   ), /*#__PURE__*/React.createElement("p", {
