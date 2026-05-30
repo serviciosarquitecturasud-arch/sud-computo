@@ -230,15 +230,18 @@ html, body, button, input, select, textarea {
     page-break-after: always !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
-    transform: rotate(90deg) scale(1.35);
+    transform: rotate(90deg);
     transform-origin: top left;
-    position: relative;
+    position: absolute;
     top: 0;
-    left: 19cm;            /* desplazamiento ajustado por el scale */
-    width: 18cm;           /* ancho base del grafico antes de escalar */
+    left: 17.4cm;          /* = alto util de la hoja: tras rotar, el bloque entra desde aqui */
+    width: 25cm;           /* tras rotar = largo de la hoja apaisada (el Gantt flex se expande a esto) */
+    height: 17.4cm;        /* tras rotar = alto de la hoja apaisada */
     max-width: none !important;
     box-sizing: border-box;
   }
+  /* El contenedor de la seccion del Gantt debe poder alojar el grafico absoluto */
+  .seccion-apaisada { position: relative !important; min-height: 25cm; }
   .grafico-apaisar > * { max-width: 100% !important; }
 }
 /* En pantalla: ocultar pie del informe (solo visible al imprimir) */
