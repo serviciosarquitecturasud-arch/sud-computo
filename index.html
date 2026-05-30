@@ -226,6 +226,12 @@ html, body, button, input, select, textarea {
     page-break-inside: auto !important;
     break-inside: auto !important;
   }
+  /* Los graficos (Gantt, etc.) no deben partirse entre dos hojas: si no entran en
+     lo que queda de pagina, saltan enteros a la siguiente. */
+  [data-tip-container] {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
 }
 /* En pantalla: ocultar pie del informe (solo visible al imprimir) */
 .informe-pie { display: none; }
