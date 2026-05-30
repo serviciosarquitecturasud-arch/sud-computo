@@ -216,6 +216,16 @@ html, body, button, input, select, textarea {
 
   /* Watermark gráfico SUD — eliminado en HITO 27.E.6 (movido al pie del documento) */
 
+  /* La portada (tapa del documento) SIEMPRE ocupa su propia primera hoja:
+     salto de pagina despues, y altura completa. El resto del documento sigue
+     fluyendo continuo (este salto es la unica excepcion intencional). */
+  .informe-portada {
+    page-break-after: always !important;
+    break-after: page !important;
+    page-break-inside: avoid !important;
+    min-height: 24cm !important;
+    height: 24cm !important;
+  }
   @page { margin: 1.8cm 1.5cm 1.8cm 1.5cm; }
 
   /* Apaisado de graficos descartado: tras varias pruebas, el Gantt no respondia
