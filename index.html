@@ -8684,6 +8684,39 @@ function Caratula({ obra, setObra, motor, cat }) {
   const incMO = costoDirecto > 0 ? (costoMO / costoDirecto) * 100 : 0;
   const incMat = costoDirecto > 0 ? (costoMat / costoDirecto) * 100 : 0;
 
+  // ====== DÍAS HÁBILES DE OBRA ======
+  // Parsea fechas en formato DD/MM/YYYY o YYYY-MM-DD. Devuelve Date o null.
+  const parseFecha = (s) => {
+    if (!s) return null;
+    const t = String(s).trim();
+    let m = t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (m) return new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+    m = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    return null;
+  };
+  // Días de la semana trabajados: índices 0=Dom..6=Sáb. Por defecto ninguno tildado.
+  const diasSemana = [
+    { idx: 1, lbl: 'Lun' }, { idx: 2, lbl: 'Mar' }, { idx: 3, lbl: 'Mié' },
+    { idx: 4, lbl: 'Jue' }, { idx: 5, lbl: 'Vie' }, { idx: 6, lbl: 'Sáb' }, { idx: 0, lbl: 'Dom' }
+  ];
+  const diasTrab = car.diasTrabajados || {}; // { '1': true, ... }
+  const toggleDia = (idx) => setCar({ diasTrabajados: { ...diasTrab, [idx]: !diasTrab[idx] } });
+  const fInicio = parseFecha(car.fechaInicioObra);
+  const fFin = parseFecha(car.fechaFinObra);
+  // Cuenta días entre inicio y fin (inclusive) cuyo día de semana esté tildado. Ignora feriados.
+  let diasHabiles = null;
+  if (fInicio && fFin && fFin >= fInicio) {
+    let cuenta = 0;
+    const cur = new Date(fInicio.getTime());
+    while (cur <= fFin) {
+      if (diasTrab[cur.getDay()]) cuenta++;
+      cur.setDate(cur.getDate() + 1);
+    }
+    diasHabiles = cuenta;
+  }
+  const algunDiaTildado = diasSemana.some(d => diasTrab[d.idx]);
+
   const tc = Number(car.tipoCambio) || 0;
   const pxM2Eq = m2Equiv > 0 ? precioVenta / m2Equiv : 0;
   const usdM2Eq = tc > 0 && m2Equiv > 0 ? pxM2Eq / tc : 0;
@@ -8901,6 +8934,35 @@ function Caratula({ obra, setObra, motor, cat }) {
           e('div', { className: 'text-xs uppercase tracking-wider text-stone-500 mb-1' }, 'Finalización estimada'),
           e(EditCell, { value: car.fechaFinObra || '', onCommit: v => setCar({ fechaFinObra: v }) })
         )
+      ),
+      // Días trabajados (tildables) + días hábiles calculados
+      e('div', { className: 'pt-3 mt-3 border-t border-stone-100' },
+        e('div', { className: 'text-xs uppercase tracking-wider text-stone-500 mb-2' }, 'Días que se trabaja'),
+        e('div', { className: 'flex flex-wrap gap-1.5 mb-3' },
+          diasSemana.map(d =>
+            e('button', {
+              key: 'dia' + d.idx,
+              onClick: () => toggleDia(d.idx),
+              className: 'px-2.5 py-1 rounded text-xs font-medium border transition-colors ' +
+                (diasTrab[d.idx]
+                  ? 'bg-amber-600 text-white border-amber-600'
+                  : 'bg-white text-stone-500 border-stone-300 hover:bg-stone-50')
+            }, d.lbl)
+          )
+        ),
+        e('div', { className: 'flex items-baseline gap-2' },
+          e('div', { className: 'text-xs text-stone-500' }, 'Días hábiles de obra:'),
+          e('div', { className: 'text-lg font-mono text-stone-800' },
+            !fInicio || !fFin
+              ? e('span', { className: 'text-sm text-stone-400 italic' }, 'cargá inicio y fin')
+              : (fFin < fInicio)
+                ? e('span', { className: 'text-sm text-red-500 italic' }, 'la fin es anterior al inicio')
+                : !algunDiaTildado
+                  ? e('span', { className: 'text-sm text-stone-400 italic' }, 'tildá los días de trabajo')
+                  : fmtN(diasHabiles) + ' días'
+          )
+        ),
+        e('div', { className: 'text-[10px] text-stone-400 italic mt-1' }, 'No descuenta feriados nacionales ni internacionales.')
       )
     ),
 
