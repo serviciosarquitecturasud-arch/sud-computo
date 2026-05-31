@@ -4186,12 +4186,7 @@ function ObraView({
     motor: motor,
     cat: cat,
     informeSecciones: informeSecciones
-  }), mostrar('presup') && /*#__PURE__*/React.createElement("div", { className: "seccion-informe", "data-titulo": "Presupuesto" }, /*#__PURE__*/React.createElement("div", {
-    className: "text-sm text-stone-500 mb-3"
-  }, "Precio de venta \u2014 coeficiente ", coef.toLocaleString('es-AR', {
-    minimumFractionDigits: 4,
-    maximumFractionDigits: 4
-  }), " aplicado a cada \xEDtem."), items.length === 0 && /*#__PURE__*/React.createElement("div", {
+  }), mostrar('presup') && /*#__PURE__*/React.createElement("div", { className: "seccion-informe", "data-titulo": "Presupuesto" }, items.length === 0 && /*#__PURE__*/React.createElement("div", {
     className: "bg-white border border-stone-300 rounded"
   }, /*#__PURE__*/React.createElement(Empty, {
     icon: FileText,
@@ -4258,7 +4253,7 @@ function ObraView({
     }, /*#__PURE__*/React.createElement("td", {
       className: td + ' text-stone-600',
       colSpan: 5
-    }, "Costo teórico × coef"), /*#__PURE__*/React.createElement("td", {
+    }, "Costo teórico"), /*#__PURE__*/React.createElement("td", {
       className: td + ' text-right font-mono text-stone-700'
     }, money(costoDirecto * coef)), /*#__PURE__*/React.createElement("td", {
       className: td
@@ -4266,8 +4261,8 @@ function ObraView({
     ajusteComercial > 0 && /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("td", {
       className: td + ' text-amber-700',
       colSpan: 5,
-      title: 'Plata extra por desperdicio + redondeo a presentación comercial × coef'
-    }, "+ Ajuste por presentación comercial × coef"), /*#__PURE__*/React.createElement("td", {
+      title: 'Plata extra por desperdicio + redondeo a presentación comercial'
+    }, "+ Ajuste por presentación comercial"), /*#__PURE__*/React.createElement("td", {
       className: td + ' text-right font-mono text-amber-700'
     }, money(ajusteComercial * coef)), /*#__PURE__*/React.createElement("td", {
       className: td
