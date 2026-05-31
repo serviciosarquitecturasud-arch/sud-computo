@@ -194,9 +194,14 @@ html, body, button, input, select, textarea {
   .card-print {
     page-break-inside: avoid !important;
     break-inside: avoid !important;
-    margin-bottom: 0.7cm !important;
+    margin-bottom: 1cm !important;
   }
-  .seccion-informe[data-titulo] { margin-top: 0.6cm !important; }
+  /* Carátula en 2 hojas: Observaciones abre la hoja 2 (junto a los Top 5) */
+  .salto-hoja2 {
+    page-break-before: always !important;
+    break-before: page !important;
+  }
+  .seccion-informe[data-titulo] { margin-top: 1.8cm !important; }
 
   /* Tablas: no romper filas a la mitad, repetir thead en cada página */
   table { page-break-inside: auto !important; }
@@ -9000,8 +9005,8 @@ function Caratula({ obra, setObra, motor, cat }) {
       )
     ),
 
-    // ─── OBSERVACIONES ───
-    e('div', { className: 'bg-white border border-stone-200 rounded p-4 seccion-informe', 'data-titulo': 'Observaciones' },
+    // ─── OBSERVACIONES (inicio hoja 2) ───
+    e('div', { className: 'bg-white border border-stone-200 rounded p-4 card-print salto-hoja2' },
       e('div', { className: 'flex items-center gap-2 mb-3' },
         e(FileText, { size: 16, className: 'text-stone-500' }),
         e('h3', { className: 'font-serif text-lg text-stone-800' }, 'Observaciones')
