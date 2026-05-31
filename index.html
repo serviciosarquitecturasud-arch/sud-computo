@@ -90,6 +90,8 @@ html, body, button, input, select, textarea {
 
   /* Modelo BLACKLIST: todo se imprime salvo lo marcado .noprint */
   .noprint { display: none !important; }
+  /* Observaciones: en print se muestra el texto completo como bloque expandible (no el textarea) */
+  .nota-print { display: block !important; }
 
   /* Bloques que NO se deben partir entre páginas */
   .seccion-informe { page-break-inside: auto; }
@@ -299,6 +301,7 @@ html, body, button, input, select, textarea {
 
 /* Texto visible solo al imprimir (oculto en pantalla) */
 .print-only { display: none; }
+.nota-print { display: none; }
 @media print { .print-only { display: inline !important; } }
 
 /* Encabezados de tabla fijos al scrollear (solo en pantalla, no afecta print) */
@@ -2170,15 +2173,22 @@ function EditNota({ value, onCommit, placeholder }) {
     setFoc(false);
     if ((v ?? '') !== (value ?? '')) onCommit(v ?? '');
   };
-  return /*#__PURE__*/React.createElement("textarea", {
-    value: v ?? '',
-    placeholder: placeholder,
-    rows: 3,
-    onFocus: () => setFoc(true),
-    onChange: e => setV(e.target.value),
-    onBlur: commit,
-    className: 'w-full bg-transparent px-2 py-1.5 rounded border border-stone-200 hover:border-stone-300 focus:border-amber-600 focus:bg-amber-50 outline-none text-sm resize-y whitespace-pre-wrap'
-  });
+  return /*#__PURE__*/React.createElement(React.Fragment, null,
+    // Pantalla: textarea editable (no se imprime)
+    /*#__PURE__*/React.createElement("textarea", {
+      value: v ?? '',
+      placeholder: placeholder,
+      rows: 3,
+      onFocus: () => setFoc(true),
+      onChange: e => setV(e.target.value),
+      onBlur: commit,
+      className: 'noprint w-full bg-transparent px-2 py-1.5 rounded border border-stone-200 hover:border-stone-300 focus:border-amber-600 focus:bg-amber-50 outline-none text-sm resize-y whitespace-pre-wrap'
+    }),
+    // Impresión: el texto completo como bloque que se expande (sin recorte)
+    /*#__PURE__*/React.createElement("div", {
+      className: 'nota-print text-sm whitespace-pre-wrap px-2 py-1'
+    }, (value ?? '').trim() ? value : '')
+  );
 }
 function EditCell({
   value,
