@@ -2138,6 +2138,24 @@ function ComboInsumo({ value, onChange, options, label }) {
   );
 }
 
+function EditNota({ value, onCommit, placeholder }) {
+  const [v, setV] = useState(value);
+  const [foc, setFoc] = useState(false);
+  useEffect(() => { if (!foc) setV(value); }, [value, foc]);
+  const commit = () => {
+    setFoc(false);
+    if ((v ?? '') !== (value ?? '')) onCommit(v ?? '');
+  };
+  return /*#__PURE__*/React.createElement("textarea", {
+    value: v ?? '',
+    placeholder: placeholder,
+    rows: 3,
+    onFocus: () => setFoc(true),
+    onChange: e => setV(e.target.value),
+    onBlur: commit,
+    className: 'w-full bg-transparent px-2 py-1.5 rounded border border-stone-200 hover:border-stone-300 focus:border-amber-600 focus:bg-amber-50 outline-none text-sm resize-y whitespace-pre-wrap'
+  });
+}
 function EditCell({
   value,
   onCommit,
@@ -4276,7 +4294,15 @@ function ObraView({
       className: td + ' text-right font-mono text-stone-900'
     }, money(costoComercial * coef)), /*#__PURE__*/React.createElement("td", {
       className: td + ' text-right font-mono text-stone-700'
-    }, '100,0 %')))))), mostrar('explosion') && /*#__PURE__*/React.createElement("div", { className: "seccion-informe", "data-titulo": "Explosión de insumos" }, /*#__PURE__*/React.createElement("div", {
+    }, '100,0 %'))))), /*#__PURE__*/React.createElement("div", {
+      className: "bg-white border border-stone-300 rounded p-4 mt-4"
+    }, /*#__PURE__*/React.createElement("h3", {
+      className: "font-serif text-base text-stone-800 mb-2"
+    }, "Observaciones"), /*#__PURE__*/React.createElement(EditNota, {
+      value: obra.observacionesPresupuesto || '',
+      onCommit: v => setObra({ ...obra, observacionesPresupuesto: v }),
+      placeholder: 'Aclaraciones del presupuesto (ej.: no incluye muebles, plazo sujeto a clima, etc.)'
+    }))), mostrar('explosion') && /*#__PURE__*/React.createElement("div", { className: "seccion-informe", "data-titulo": "Explosión de insumos" }, /*#__PURE__*/React.createElement("div", {
     className: "text-sm text-stone-500 mb-3"
   }, "Listado de compras: cantidades t\xE9cnicas de cada material, con desperdicio y convertidas a presentaci\xF3n comercial."), explosion.length === 0 && /*#__PURE__*/React.createElement("div", {
     className: "bg-white border border-stone-300 rounded"
@@ -8964,6 +8990,19 @@ function Caratula({ obra, setObra, motor, cat }) {
         ),
         e('div', { className: 'text-[10px] text-stone-400 italic mt-1' }, 'No descuenta feriados nacionales ni internacionales.')
       )
+    ),
+
+    // ─── OBSERVACIONES ───
+    e('div', { className: 'bg-white border border-stone-200 rounded p-4 seccion-informe', 'data-titulo': 'Observaciones' },
+      e('div', { className: 'flex items-center gap-2 mb-3' },
+        e(FileText, { size: 16, className: 'text-stone-500' }),
+        e('h3', { className: 'font-serif text-lg text-stone-800' }, 'Observaciones')
+      ),
+      e(EditNota, {
+        value: obra.observacionesCaratula || '',
+        onCommit: v => setObra({ ...obra, observacionesCaratula: v }),
+        placeholder: 'Aclaraciones de la obra (ej.: no incluye muebles, plazo sujeto a clima, etc.)'
+      })
     ),
 
     // ─── TOP 5 RUBROS ───
