@@ -8670,6 +8670,20 @@ function Caratula({ obra, setObra, motor, cat }) {
   const costoComercial = costoDirecto + ajusteComercial;
   const precioVenta = costoComercial * coef;
 
+  // ====== INCIDENCIA POR TIPO DE INSUMO (MO / Materiales / Equipos) ======
+  let costoMO = 0, costoMat = 0, costoEq = 0;
+  items.forEach(it => {
+    const cantItem = it.cant || 0;
+    (motor.bibMap[it.cod] || []).forEach(b => {
+      const c = b.cant * cantItem * motor.costoInsumoEnObra(b.tipo, b.insumo, obra);
+      if (b.tipo === 'MO') costoMO += c;
+      else if (b.tipo === 'M') costoMat += c;
+      else if (b.tipo === 'E') costoEq += c;
+    });
+  });
+  const incMO = costoDirecto > 0 ? (costoMO / costoDirecto) * 100 : 0;
+  const incMat = costoDirecto > 0 ? (costoMat / costoDirecto) * 100 : 0;
+
   const tc = Number(car.tipoCambio) || 0;
   const pxM2Eq = m2Equiv > 0 ? precioVenta / m2Equiv : 0;
   const usdM2Eq = tc > 0 && m2Equiv > 0 ? pxM2Eq / tc : 0;
@@ -8835,13 +8849,16 @@ function Caratula({ obra, setObra, motor, cat }) {
           e('div', { className: 'text-xs text-stone-500' }, 'Ítems computados'),
           e('div', { className: 'text-lg font-mono text-stone-800' }, items.length)
         ),
-        e('div', null,
+        // Costo directo y coeficiente: solo en pantalla (uso interno), no en impresión
+        e('div', { className: 'noprint' },
           e('div', { className: 'text-xs text-stone-500' }, 'Costo directo'),
-          e('div', { className: 'text-lg font-mono text-stone-800' }, money(costoDirecto))
+          e('div', { className: 'text-lg font-mono text-stone-800' }, money(costoDirecto)),
+          e('div', { className: 'text-[10px] text-red-500 italic mt-0.5' }, 'no se imprime')
         ),
-        e('div', null,
+        e('div', { className: 'noprint' },
           e('div', { className: 'text-xs text-stone-500' }, 'Coeficiente de pase'),
-          e('div', { className: 'text-lg font-mono text-stone-800' }, fmtN(coef))
+          e('div', { className: 'text-lg font-mono text-stone-800' }, fmtN(coef)),
+          e('div', { className: 'text-[10px] text-red-500 italic mt-0.5' }, 'no se imprime')
         ),
         e('div', null,
           e('div', { className: 'text-xs text-stone-500' }, 'Precio de venta'),
@@ -8861,6 +8878,28 @@ function Caratula({ obra, setObra, motor, cat }) {
         e('div', null,
           e('div', { className: 'text-xs text-stone-500' }, 'USD por m² equivalente'),
           e('div', { className: 'text-lg font-mono text-stone-800' }, tc > 0 && m2Equiv > 0 ? 'USD ' + fmtN(usdM2Eq) : '—')
+        )
+      ),
+      // Incidencias MO / Materiales sobre el total de obra
+      e('div', { className: 'pt-3 mt-3 border-t border-stone-100 grid grid-cols-2 gap-3 text-sm' },
+        e('div', null,
+          e('div', { className: 'text-xs text-stone-500' }, 'Incidencia mano de obra'),
+          e('div', { className: 'text-lg font-mono text-stone-800' }, fmtN(incMO) + ' %')
+        ),
+        e('div', null,
+          e('div', { className: 'text-xs text-stone-500' }, 'Incidencia materiales'),
+          e('div', { className: 'text-lg font-mono text-stone-800' }, fmtN(incMat) + ' %')
+        )
+      ),
+      // Fechas de obra (editables)
+      e('div', { className: 'pt-3 mt-3 border-t border-stone-100 grid grid-cols-2 gap-3 text-sm' },
+        e('div', null,
+          e('div', { className: 'text-xs uppercase tracking-wider text-stone-500 mb-1' }, 'Fecha de inicio de obra'),
+          e(EditCell, { value: car.fechaInicioObra || '', onCommit: v => setCar({ fechaInicioObra: v }) })
+        ),
+        e('div', null,
+          e('div', { className: 'text-xs uppercase tracking-wider text-stone-500 mb-1' }, 'Finalización estimada'),
+          e(EditCell, { value: car.fechaFinObra || '', onCommit: v => setCar({ fechaFinObra: v }) })
         )
       )
     ),
@@ -8955,6 +8994,7 @@ function PrintModal({ obra, onClose, onPrint }) {
   // Secciones disponibles según haya obra activa o no
   const seccionesObra = [
     { id: 'portada',    label: 'Portada con datos de la obra' },
+    { id: 'caratula',   label: 'Carátula (datos, superficies, resumen)' },
     { id: 'computo',    label: 'Cómputo / Planilla de cotización' },
     { id: 'coef',       label: 'Coeficiente de pase' },
     { id: 'apus',       label: 'Cómputo Unitario en uso (auditoría)' },
