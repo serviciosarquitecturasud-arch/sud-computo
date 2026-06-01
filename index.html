@@ -1627,7 +1627,8 @@ function expandSeed(s) {
       cant: a[3] || 0,
       nota: a[4]
     })).sort((x, y) => cmpCodigo(x.apu, y.apu) || (x.tipo || '').localeCompare(y.tipo || '') || cmpCodigo(x.insumo, y.insumo)),
-    deletedApus: []
+    deletedApus: [],
+    apusEditados: []
   };
 }
 const fmt = n => (Number(n) || 0).toLocaleString('es-AR', {
@@ -2894,6 +2895,7 @@ function APUs({
     let n = -1;
     setCat(c => ({
       ...c,
+      apusEditados: Array.isArray(c.apusEditados) && c.apusEditados.includes(sel) ? c.apusEditados : [...(Array.isArray(c.apusEditados) ? c.apusEditados : []), sel],
       biblioteca: c.biblioteca.map(b => {
         if (b.apu !== sel) return b;
         n++;
@@ -2908,6 +2910,7 @@ function APUs({
     let n = -1;
     setCat(c => ({
       ...c,
+      apusEditados: Array.isArray(c.apusEditados) && c.apusEditados.includes(sel) ? c.apusEditados : [...(Array.isArray(c.apusEditados) ? c.apusEditados : []), sel],
       biblioteca: c.biblioteca.filter(b => {
         if (b.apu !== sel) return true;
         n++;
@@ -2917,6 +2920,7 @@ function APUs({
   };
   const addFila = tipo => setCat(c => ({
     ...c,
+    apusEditados: Array.isArray(c.apusEditados) && c.apusEditados.includes(sel) ? c.apusEditados : [...(Array.isArray(c.apusEditados) ? c.apusEditados : []), sel],
     biblioteca: [...c.biblioteca, {
       apu: sel,
       tipo,
@@ -10341,7 +10345,8 @@ function App() {
             herramientas: Array.isArray(parsed.herramientas) ? parsed.herramientas : seedFresh.herramientas,
             rubros: Array.isArray(parsed.rubros) ? parsed.rubros : seedFresh.rubros,
             biblioteca: Array.isArray(parsed.biblioteca) ? parsed.biblioteca : seedFresh.biblioteca,
-            deletedApus: Array.isArray(parsed.deletedApus) ? parsed.deletedApus : []
+            deletedApus: Array.isArray(parsed.deletedApus) ? parsed.deletedApus : [],
+            apusEditados: Array.isArray(parsed.apusEditados) ? parsed.apusEditados : []
           };
           // MERGE NO DESTRUCTIVO con el SEED: si el SEED tiene items nuevos
           // que no están en el catálogo guardado, agregarlos. NO se tocan
@@ -10349,6 +10354,9 @@ function App() {
           // EXCEPCIÓN: APUs marcados como eliminados (deletedApus) NO se re-inyectan,
           // ni sus filas de biblioteca ni su rubro.
           const deletedApusSet = new Set(catFinal.deletedApus);
+          // Opción 1 — "mi catálogo manda": los APUs que el usuario editó a mano
+          // quedan blindados. El SEED no re-inyecta ni agrega filas a esos APUs.
+          const editadosSet = new Set(catFinal.apusEditados);
           let added = { mat: 0, mo: 0, eq: 0, rub: 0, bib: 0 };
           // Materiales por código
           const matCods = new Set(catFinal.materiales.map(m => m.cod));
@@ -10365,17 +10373,19 @@ function App() {
           seedFresh.herramientas.forEach(h => {
             if (!eqCods.has(h.cod)) { catFinal.herramientas.push(h); added.eq++; }
           });
-          // Rubros por código (saltar los que corresponden a APUs eliminados)
+          // Rubros por código (saltar los que corresponden a APUs eliminados o editados)
           const rubCods = new Set(catFinal.rubros.map(r => r.cod));
           seedFresh.rubros.forEach(r => {
             if (deletedApusSet.has(r.cod)) return;
+            if (editadosSet.has(r.cod)) return;
             if (!rubCods.has(r.cod)) { catFinal.rubros.push(r); added.rub++; }
           });
-          // Biblioteca por triple clave: apu+tipo+insumo (saltar APUs eliminados)
+          // Biblioteca por triple clave: apu+tipo+insumo (saltar APUs eliminados o editados)
           const bibKey = b => b.apu + '|' + b.tipo + '|' + b.insumo;
           const bibKeys = new Set(catFinal.biblioteca.map(bibKey));
           seedFresh.biblioteca.forEach(b => {
             if (deletedApusSet.has(b.apu)) return;
+            if (editadosSet.has(b.apu)) return;
             if (!bibKeys.has(bibKey(b))) { catFinal.biblioteca.push(b); added.bib++; }
           });
           const total = added.mat + added.mo + added.eq + added.rub + added.bib;
