@@ -17,6 +17,7 @@ html, body, button, input, select, textarea {
 }
 </style>
 <style>
+.onlyprint { display: none; }
 @media print {
   /* Fondo blanco global — la app en pantalla tiene grises sutiles que en
      impresión consumen mucha tinta y no aportan. */
@@ -90,6 +91,7 @@ html, body, button, input, select, textarea {
 
   /* Modelo BLACKLIST: todo se imprime salvo lo marcado .noprint */
   .noprint { display: none !important; }
+  .onlyprint { display: block !important; }
   /* Observaciones: en print se muestra el texto completo como bloque expandible (no el textarea) */
   .nota-print { display: block !important; }
 
@@ -3678,6 +3680,7 @@ function ObraView({
   const [tab, setTab] = useState('caratula');
   const [subMo, setSubMo] = useState('precios');     // 'precios' | 'analisis' — sub-tabs Solapa 4
   const [subHerr, setSubHerr] = useState('precios'); // 'precios' | 'analisis' — sub-tabs Solapa 5
+  const [subExp, setSubExp] = useState('completa');  // 'completa' | 'comprar' — sub-tabs Explosión de insumos
   // Helpers para modo "informe" (cuando se imprime el documento completo)
   const mostrar = (k) => informeSecciones ? informeSecciones.includes(k) : tab === k;
   const breakClass = informeSecciones ? "print-break-before" : "";
@@ -4338,12 +4341,226 @@ function ObraView({
       placeholder: 'Aclaraciones del presupuesto (ej.: no incluye muebles, plazo sujeto a clima, etc.)'
     }))), mostrar('explosion') && /*#__PURE__*/React.createElement("div", { className: "seccion-informe", "data-titulo": "Explosión de insumos" }, /*#__PURE__*/React.createElement("div", {
     className: "text-sm text-stone-500 mb-3"
-  }, "Listado de compras: cantidades t\xE9cnicas de cada material, con desperdicio y convertidas a presentaci\xF3n comercial."), explosion.length === 0 && /*#__PURE__*/React.createElement("div", {
+  }, "Listado de compras: cantidades t\xE9cnicas de cada material, con desperdicio y convertidas a presentaci\xF3n comercial."),
+    !informeSecciones && /*#__PURE__*/React.createElement("div", { className: "noprint flex gap-1 border-b border-stone-200 mb-3" },
+      [['completa', 'Completa'], ['comprar', 'A comprar'], ['comparativa', 'Comparativa proveedores']].map(([k, lbl]) =>
+        /*#__PURE__*/React.createElement("button", {
+          key: k,
+          onClick: () => setSubExp(k),
+          className: 'flex items-center gap-1.5 px-3 py-2 text-sm border-b-2 -mb-px ' + (subExp === k ? 'border-amber-600 text-stone-800 font-medium' : 'border-transparent text-stone-500 hover:text-stone-700')
+        }, lbl)
+      )
+    ),
+    explosion.length === 0 && /*#__PURE__*/React.createElement("div", {
     className: "bg-white border border-stone-300 rounded"
   }, /*#__PURE__*/React.createElement(Empty, {
     icon: ShoppingCart,
     msg: "Sin materiales para explotar (carg\xE1 \xEDtems con APU en la Planilla de cotizaci\xF3n)"
-  })), explosion.length > 0 && /*#__PURE__*/React.createElement("div", {
+  })),
+    explosion.length > 0 && subExp === 'comprar' && /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-stone-300 rounded overflow-x-auto"
+  }, /*#__PURE__*/React.createElement("table", {
+    className: "w-full text-sm"
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", {
+    className: th
+  }, "Material"), /*#__PURE__*/React.createElement("th", {
+    className: th + ' w-14'
+  }, "Un."), /*#__PURE__*/React.createElement("th", {
+    className: th + ' w-40'
+  }, "A comprar"))), /*#__PURE__*/React.createElement("tbody", null, (() => {
+    const gruposC = {};
+    explosion.forEach(e => {
+      const d = (e.div || 'Sin división').trim() || 'Sin división';
+      if (!gruposC[d]) gruposC[d] = [];
+      gruposC[d].push(e);
+    });
+    const divsC = Object.keys(gruposC).sort((a, b) => {
+      const ca = (gruposC[a][0] && gruposC[a][0].cod) || '';
+      const cb = (gruposC[b][0] && gruposC[b][0].cod) || '';
+      return cmpCodigo(ca, cb);
+    });
+    const filaC = e => /*#__PURE__*/React.createElement("tr", {
+      key: 'c-' + e.cod,
+      className: "hover:bg-stone-50"
+    }, /*#__PURE__*/React.createElement("td", {
+      className: td
+    }, e.desc), /*#__PURE__*/React.createElement("td", {
+      className: td + ' text-stone-500'
+    }, e.unidad), /*#__PURE__*/React.createElement("td", {
+      className: td + ' text-right font-mono text-stone-800'
+    }, e.pres1 && e.comp1 !== '' ? /*#__PURE__*/React.createElement("span", null, fmtN(e.comp1), " ", e.pres1, e.pres2 && e.comp2 ? ' + ' + fmtN(e.comp2) + ' ' + e.pres2 : '') : /*#__PURE__*/React.createElement("span", null, fmtN(e.conDesp), " ", e.unidad)));
+    return divsC.map(dNom => /*#__PURE__*/React.createElement(React.Fragment, { key: 'divc-' + dNom },
+      /*#__PURE__*/React.createElement("tr", { className: 'bg-amber-600 text-white' },
+        /*#__PURE__*/React.createElement("td", { className: td + ' font-semibold uppercase tracking-wide text-xs', colSpan: 3 }, dNom)
+      ),
+      gruposC[dNom].map(filaC)
+    ));
+  })()))),
+    explosion.length > 0 && subExp === 'comparativa' && (() => {
+    const IVA = 0.21;
+    const cot = obra.cotizaciones || {};
+    const nuevoProv = () => ({ nombre: '', precio: '', iva: 'sin' });
+    const nuevoEntry = () => ({ p: [nuevoProv(), nuevoProv(), nuevoProv()] });
+    const getPs = cod => (cot[cod] && cot[cod].p) || [nuevoProv(), nuevoProv(), nuevoProv()];
+    // total con IVA de un proveedor para un ítem (lo que realmente se paga)
+    const totalConIVA = (e, prov) => {
+      const u = Number(prov && prov.precio) || 0;
+      if (u <= 0) return 0;
+      const unitConIVA = (prov.iva === 'con') ? u : u * (1 + IVA);
+      return unitConIVA * (Number(e.totalComprar) || 0);
+    };
+    const setCampo = (cod, idx, campo, val) => {
+      const prev = obra.cotizaciones || {};
+      const entry = prev[cod] || nuevoEntry();
+      const ps = entry.p.map((x, i) => i === idx ? { ...x, [campo]: val } : x);
+      setObra({ ...obra, cotizaciones: { ...prev, [cod]: { ...entry, p: ps } } });
+    };
+    // botón "usar este precio": copia el unitario del proveedor a la Lista de materiales
+    const usarPrecio = (cod, prov) => {
+      const u = Number(prov && prov.precio) || 0;
+      if (u <= 0) return;
+      const prec = obra.precios || {};
+      const mat = { ...(prec.materiales || {}) };
+      const matIVA = { ...(prec.materialesConIVA || {}) };
+      if (prov.iva === 'con') { matIVA[cod] = u; delete mat[cod]; }
+      else { mat[cod] = u; delete matIVA[cod]; }
+      setObra({ ...obra, precios: { ...prec, materiales: mat, materialesConIVA: matIVA } });
+    };
+    const provNombres = [0, 1, 2].map(i => {
+      let n = '';
+      for (const k in cot) { const v = cot[k] && cot[k].p && cot[k].p[i] && cot[k].p[i].nombre; if (v) { n = v; break; } }
+      return n;
+    });
+    const provIvas = [0, 1, 2].map(i => {
+      for (const k in cot) { const v = cot[k] && cot[k].p && cot[k].p[i] && cot[k].p[i].iva; if (v) return v; }
+      return 'sin';
+    });
+    const totalGanador = explosion.reduce((acc, e) => {
+      const ps = getPs(e.cod);
+      const tots = [0, 1, 2].map(i => totalConIVA(e, ps[i])).filter(v => v > 0);
+      return acc + (tots.length ? Math.min(...tots) : 0);
+    }, 0);
+    const setIvaColumna = (i, val) => {
+      const prev = obra.cotizaciones || {};
+      const next = { ...prev };
+      explosion.forEach(e => {
+        const entry = next[e.cod] || nuevoEntry();
+        const ps = entry.p.map((x, j) => j === i ? { ...x, iva: val } : x);
+        next[e.cod] = { ...entry, p: ps };
+      });
+      setObra({ ...obra, cotizaciones: next });
+    };
+    const setNombreColumna = (i, val) => {
+      const prev = obra.cotizaciones || {};
+      const next = { ...prev };
+      explosion.forEach(e => {
+        const entry = next[e.cod] || nuevoEntry();
+        const ps = entry.p.map((x, j) => j === i ? { ...x, nombre: val } : x);
+        next[e.cod] = { ...entry, p: ps };
+      });
+      setObra({ ...obra, cotizaciones: next });
+    };
+    return /*#__PURE__*/React.createElement("div", null,
+      /*#__PURE__*/React.createElement("p", { className: "noprint text-xs text-stone-500 mb-2" }, "Carg\xE1 el precio UNITARIO (por unidad de medida) de cada proveedor y eleg\xED si es con o sin IVA. La comparaci\xF3n del m\xE1s barato se hace siempre sobre el TOTAL con IVA. El bot\xF3n \u201Cusar\u201D copia ese unitario a la Lista de materiales."),
+      /*#__PURE__*/React.createElement("div", { className: "bg-white border border-stone-300 rounded overflow-x-auto" },
+      /*#__PURE__*/React.createElement("table", { className: "w-full text-sm" },
+        /*#__PURE__*/React.createElement("thead", null,
+          /*#__PURE__*/React.createElement("tr", null,
+            /*#__PURE__*/React.createElement("th", { className: th + ' w-16' }, "\xCDtem"),
+            /*#__PURE__*/React.createElement("th", { className: th }, "Material"),
+            /*#__PURE__*/React.createElement("th", { className: th + ' w-12' }, "Un."),
+            /*#__PURE__*/React.createElement("th", { className: th + ' w-28' }, "A comprar"),
+            /*#__PURE__*/React.createElement("th", { className: th + ' w-40 text-center' }, "Prov. 1"),
+            /*#__PURE__*/React.createElement("th", { className: th + ' w-40 text-center' }, "Prov. 2"),
+            /*#__PURE__*/React.createElement("th", { className: th + ' w-40 text-center' }, "Prov. 3"),
+            /*#__PURE__*/React.createElement("th", { className: th + ' w-32 text-center' }, "M\xE1s barato")
+          ),
+          /*#__PURE__*/React.createElement("tr", { className: "noprint bg-stone-50" },
+            /*#__PURE__*/React.createElement("th", { className: "p-1", colSpan: 4 }),
+            ...[0, 1, 2].map(i => /*#__PURE__*/React.createElement("th", { key: 'pn-' + i, className: "p-1" },
+              /*#__PURE__*/React.createElement("input", {
+                type: "text", placeholder: "Nombre proveedor " + (i + 1), value: provNombres[i],
+                onChange: ev => setNombreColumna(i, ev.target.value),
+                className: "w-full border border-stone-300 rounded px-2 py-1 text-xs mb-1"
+              }),
+              /*#__PURE__*/React.createElement("select", {
+                value: provIvas[i],
+                onChange: ev => setIvaColumna(i, ev.target.value),
+                className: "w-full border border-stone-300 rounded px-1 py-1 text-xs text-stone-600"
+              },
+                /*#__PURE__*/React.createElement("option", { value: 'sin' }, "Precio sin IVA"),
+                /*#__PURE__*/React.createElement("option", { value: 'con' }, "Precio con IVA")
+              )
+            )),
+            /*#__PURE__*/React.createElement("th", { className: "p-1" })
+          )
+        ),
+        /*#__PURE__*/React.createElement("tbody", null, (() => {
+          const grupos = {};
+          explosion.forEach(e => {
+            const d = (e.div || 'Sin divisi\xF3n').trim() || 'Sin divisi\xF3n';
+            if (!grupos[d]) grupos[d] = [];
+            grupos[d].push(e);
+          });
+          const divs = Object.keys(grupos).sort((a, b) => {
+            const ca = (grupos[a][0] && grupos[a][0].cod) || '';
+            const cb = (grupos[b][0] && grupos[b][0].cod) || '';
+            return cmpCodigo(ca, cb);
+          });
+          const fila = e => {
+            const ps = getPs(e.cod);
+            const totales = [0, 1, 2].map(i => totalConIVA(e, ps[i]));
+            const validos = totales.filter(v => v > 0);
+            const minVal = validos.length ? Math.min(...validos) : null;
+            const idxGanador = minVal !== null ? totales.findIndex(v => v === minVal && v > 0) : -1;
+            const aComprar = e.pres1 && e.comp1 !== '' ? (fmtN(e.comp1) + ' ' + e.pres1 + (e.pres2 && e.comp2 ? ' + ' + fmtN(e.comp2) + ' ' + e.pres2 : '')) : (fmtN(e.conDesp) + ' ' + e.unidad);
+            return /*#__PURE__*/React.createElement("tr", { key: 'cmp-' + e.cod, className: "hover:bg-stone-50" },
+              /*#__PURE__*/React.createElement("td", { className: td + ' font-mono text-xs text-stone-500' }, e.cod),
+              /*#__PURE__*/React.createElement("td", { className: td }, e.desc),
+              /*#__PURE__*/React.createElement("td", { className: td + ' text-stone-500' }, e.unidad),
+              /*#__PURE__*/React.createElement("td", { className: td + ' text-right font-mono text-stone-700 text-xs' }, aComprar),
+              ...[0, 1, 2].map(i => {
+                const u = Number(ps[i] && ps[i].precio) || 0;
+                const esGan = i === idxGanador;
+                return /*#__PURE__*/React.createElement("td", { key: 'pr-' + i, className: td + (esGan ? ' bg-green-50' : '') },
+                  /*#__PURE__*/React.createElement("input", {
+                    type: "number", placeholder: "$/" + (e.unidad || 'un'), value: (ps[i] && ps[i].precio) || '',
+                    onChange: ev => setCampo(e.cod, i, 'precio', ev.target.value),
+                    className: "noprint w-full border border-stone-300 rounded px-2 py-1 text-right text-sm " + (esGan ? 'font-semibold text-green-700' : '')
+                  }),
+                  /*#__PURE__*/React.createElement("div", { className: "noprint flex items-center justify-end gap-1 mt-0.5" },
+                    /*#__PURE__*/React.createElement("span", { className: "text-[10px] text-stone-400 font-mono" }, totales[i] > 0 ? ('Tot ' + money(totales[i])) : ''),
+                    u > 0 && /*#__PURE__*/React.createElement("button", {
+                      onClick: () => usarPrecio(e.cod, ps[i]),
+                      title: "Copiar este unitario a la Lista de materiales",
+                      className: "text-[10px] px-1.5 py-0.5 rounded border border-amber-500 text-amber-700 hover:bg-amber-50"
+                    }, "usar")
+                  ),
+                  /*#__PURE__*/React.createElement("span", { className: "onlyprint text-right block font-mono" + (esGan ? ' font-semibold' : '') }, u > 0 ? (money(u) + (ps[i].iva === 'con' ? ' c/IVA' : ' s/IVA')) : '\u2014')
+                );
+              }),
+              /*#__PURE__*/React.createElement("td", { className: td + ' text-center' }, idxGanador >= 0
+                ? /*#__PURE__*/React.createElement("span", { className: "inline-block px-2 py-0.5 rounded text-xs font-semibold bg-green-100 text-green-800" }, (provNombres[idxGanador] || ('Prov. ' + (idxGanador + 1))) + ' \xB7 ' + money(minVal))
+                : /*#__PURE__*/React.createElement("span", { className: "text-stone-300 text-xs" }, "\u2014"))
+            );
+          };
+          return divs.map(dNom => /*#__PURE__*/React.createElement(React.Fragment, { key: 'divcmp-' + dNom },
+            /*#__PURE__*/React.createElement("tr", { className: 'bg-amber-600 text-white' },
+              /*#__PURE__*/React.createElement("td", { className: td + ' font-semibold uppercase tracking-wide text-xs', colSpan: 8 }, dNom)
+            ),
+            grupos[dNom].map(fila)
+          ));
+        })()),
+        /*#__PURE__*/React.createElement("tfoot", null,
+          /*#__PURE__*/React.createElement("tr", { className: "bg-stone-100 font-semibold" },
+            /*#__PURE__*/React.createElement("td", { className: td, colSpan: 7 }, "Total comprando el m\xE1s barato de cada \xEDtem (con IVA)"),
+            /*#__PURE__*/React.createElement("td", { className: td + ' text-center text-green-800' }, money(totalGanador))
+          )
+        )
+      )
+    ));
+  })(),
+    explosion.length > 0 && (informeSecciones || subExp === 'completa') && /*#__PURE__*/React.createElement("div", {
     className: "bg-white border border-stone-300 rounded overflow-x-auto"
   }, /*#__PURE__*/React.createElement("table", {
     className: "w-full text-sm"
