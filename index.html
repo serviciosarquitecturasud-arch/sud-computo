@@ -3686,7 +3686,7 @@ function ObraView({
   const [subMo, setSubMo] = useState('precios');     // 'precios' | 'analisis' — sub-tabs Solapa 4
   const [subHerr, setSubHerr] = useState('precios'); // 'precios' | 'analisis' — sub-tabs Solapa 5
   const [subExp, setSubExp] = useState('completa');  // 'completa' | 'comprar' — sub-tabs Explosión de insumos
-  const [divsComprarSel, setDivsComprarSel] = useState(null); // null = todas; {divNom: bool} = selección de divisiones a imprimir en "A comprar"
+  const [divsComprarSel, setDivsComprarSel] = useState(null); // null = todas; {rubroKey: bool} = selección de rubros a imprimir en "A comprar"
   // Helpers para modo "informe" (cuando se imprime el documento completo)
   const mostrar = (k) => informeSecciones ? informeSecciones.includes(k) : tab === k;
   const breakClass = informeSecciones ? "print-break-before" : "";
@@ -3867,6 +3867,48 @@ function ObraView({
       };
     }).sort((a, b) => cmpCodigo(a.cod, b.cod));
   }, [items, motor, obra.materialesConfig, obra.precios, obra.proveedores]);
+
+  // Explosión por RUBRO (no colapsa entre rubros) — para compra escalonada por tarea.
+  // Opción A: el redondeo a presentación comercial se hace POR RUBRO, no global.
+  // Necesidad física por (rubro, material); luego desperdicio + redondeo a presentación, por rubro.
+  const explosionPorRubro = useMemo(() => {
+    const rpDe = c => String(c).split('.')[0];
+    const need = {}; // need[rp][insumo] = cantidad física
+    items.forEach(it => {
+      const rp = rpDe(it.cod);
+      (motor.bibMap[it.cod] || []).forEach(b => {
+        if (b.tipo === 'M' && b.cant * (it.cant || 0) > 0) {
+          if (!need[rp]) need[rp] = {};
+          need[rp][b.insumo] = (need[rp][b.insumo] || 0) + b.cant * (it.cant || 0);
+        }
+      });
+    });
+    const rubros = Object.keys(need).sort((a, b) => (Number(a) || 0) - (Number(b) || 0));
+    return rubros.map(rp => {
+      const nombre = (motor.rubMap[rp + '.00'] || {}).desc || 'Rubro ' + rp;
+      const mats = Object.keys(need[rp]).filter(k => need[rp][k] > 0).map(k => {
+        const m = getMatConfig(k);
+        const nec = need[rp][k];
+        const conDesp = nec * (1 + (m.desp || 0) / 100);
+        let comp1 = '', comp2 = '', totalComprar = conDesp;
+        if (m.fac1 > 0) {
+          if (m.fac2 > 0) {
+            comp1 = Math.floor(conDesp / m.fac1);
+            comp2 = Math.ceil((conDesp - comp1 * m.fac1) / m.fac2);
+          } else {
+            comp1 = Math.ceil(conDesp / m.fac1);
+          }
+          totalComprar = (comp1 || 0) * m.fac1 + (comp2 || 0) * (m.fac2 || 0);
+        }
+        return {
+          cod: k, desc: m.desc, unidad: m.unidad, nec, desp: m.desp || 0, conDesp,
+          pres1: m.pres1, comp1, pres2: m.pres2, comp2,
+          fac1: Number(m.fac1) || 0, fac2: Number(m.fac2) || 0, totalComprar
+        };
+      }).sort((a, b) => cmpCodigo(a.cod, b.cod));
+      return { rp, nombre, mats };
+    });
+  }, [items, motor, obra.materialesConfig, obra.precios]);
 
   // Hito 8 — Ajuste por presentación comercial (camino γ).
   // Por cada material en uso: (totalComprar − nec) × precio_teórico_β
@@ -4366,38 +4408,30 @@ function ObraView({
     msg: "Sin materiales para explotar (carg\xE1 \xEDtems con APU en la Planilla de cotizaci\xF3n)"
   })),
     explosion.length > 0 && subExp === 'comprar' && (() => {
-    // divisiones disponibles, ordenadas por código
-    const gruposAll = {};
-    explosion.forEach(e => {
-      const d = (e.div || 'Sin divisi\xF3n').trim() || 'Sin divisi\xF3n';
-      if (!gruposAll[d]) gruposAll[d] = [];
-      gruposAll[d].push(e);
-    });
-    const divsDisp = Object.keys(gruposAll).sort((a, b) => {
-      const ca = (gruposAll[a][0] && gruposAll[a][0].cod) || '';
-      const cb = (gruposAll[b][0] && gruposAll[b][0].cod) || '';
-      return cmpCodigo(ca, cb);
-    });
-    const estaSel = d => divsComprarSel === null ? true : !!divsComprarSel[d];
-    const toggleDiv = d => {
+    // Agrupación por RUBRO (tarea) — compra escalonada, redondeo a presentación por rubro (Opción A).
+    const rubsDisp = explosionPorRubro.map(g => g.rp);
+    const grupoDe = rp => explosionPorRubro.find(g => g.rp === rp);
+    const labelDe = rp => { const g = grupoDe(rp); return g ? (g.rp + ' · ' + g.nombre) : rp; };
+    const estaSel = rp => divsComprarSel === null ? true : !!divsComprarSel[rp];
+    const toggle = rp => {
       const base = {};
-      divsDisp.forEach(x => { base[x] = divsComprarSel === null ? true : !!divsComprarSel[x]; });
-      base[d] = !base[d];
+      rubsDisp.forEach(x => { base[x] = divsComprarSel === null ? true : !!divsComprarSel[x]; });
+      base[rp] = !base[rp];
       setDivsComprarSel(base);
     };
     const setTodas = val => {
       const base = {};
-      divsDisp.forEach(x => { base[x] = val; });
+      rubsDisp.forEach(x => { base[x] = val; });
       setDivsComprarSel(base);
     };
-    const algunaSel = divsDisp.some(estaSel);
+    const algunaSel = rubsDisp.some(estaSel);
     return /*#__PURE__*/React.createElement("div", null,
       /*#__PURE__*/React.createElement("div", { className: "noprint border border-stone-300 rounded bg-stone-50 p-3 mb-3" },
         /*#__PURE__*/React.createElement("div", { className: "flex items-center justify-between mb-2" },
-          /*#__PURE__*/React.createElement("span", { className: "text-xs font-semibold text-stone-600 uppercase tracking-wide" }, "Divisiones a imprimir"),
+          /*#__PURE__*/React.createElement("span", { className: "text-xs font-semibold text-stone-600 uppercase tracking-wide" }, "Rubros (tareas) a imprimir"),
           /*#__PURE__*/React.createElement("div", { className: "flex items-center gap-2" },
-            /*#__PURE__*/React.createElement("button", { onClick: () => setTodas(true), className: "text-xs text-stone-500 hover:text-stone-700 underline" }, "Todas"),
-            /*#__PURE__*/React.createElement("button", { onClick: () => setTodas(false), className: "text-xs text-stone-500 hover:text-stone-700 underline" }, "Ninguna"),
+            /*#__PURE__*/React.createElement("button", { onClick: () => setTodas(true), className: "text-xs text-stone-500 hover:text-stone-700 underline" }, "Todos"),
+            /*#__PURE__*/React.createElement("button", { onClick: () => setTodas(false), className: "text-xs text-stone-500 hover:text-stone-700 underline" }, "Ninguno"),
             /*#__PURE__*/React.createElement("button", {
               onClick: () => window.print(),
               disabled: !algunaSel,
@@ -4405,10 +4439,11 @@ function ObraView({
             }, "Imprimir selecci\xF3n")
           )
         ),
+        /*#__PURE__*/React.createElement("p", { className: "text-[11px] text-stone-400 mb-2" }, "Cada rubro redondea a presentaci\xF3n comercial por separado: compr\xE1s lo de esa tarea sin arrastrar el resto."),
         /*#__PURE__*/React.createElement("div", { className: "flex flex-wrap gap-x-4 gap-y-1.5" },
-          divsDisp.map(d => /*#__PURE__*/React.createElement("label", { key: 'chk-' + d, className: "flex items-center gap-1.5 text-sm text-stone-700 cursor-pointer" },
-            /*#__PURE__*/React.createElement("input", { type: "checkbox", checked: estaSel(d), onChange: () => toggleDiv(d), className: "accent-amber-600" }),
-            d
+          rubsDisp.map(rp => /*#__PURE__*/React.createElement("label", { key: 'chk-' + rp, className: "flex items-center gap-1.5 text-sm text-stone-700 cursor-pointer" },
+            /*#__PURE__*/React.createElement("input", { type: "checkbox", checked: estaSel(rp), onChange: () => toggle(rp), className: "accent-amber-600" }),
+            labelDe(rp)
           ))
         )
       ),
@@ -4422,7 +4457,7 @@ function ObraView({
       /*#__PURE__*/React.createElement("th", { className: th + ' w-40' }, "Presentaci\xF3n 2"),
       /*#__PURE__*/React.createElement("th", { className: th + ' w-40 text-right' }, "A comprar")
     )), /*#__PURE__*/React.createElement("tbody", null, (() => {
-    const divsC = divsDisp.filter(estaSel);
+    const rubsC = rubsDisp.filter(estaSel);
     const filaC = e => /*#__PURE__*/React.createElement("tr", {
       key: 'c-' + e.cod,
       className: "hover:bg-stone-50"
@@ -4433,12 +4468,12 @@ function ObraView({
       /*#__PURE__*/React.createElement("td", { className: td + ' text-stone-600 text-xs' }, e.pres2 ? /*#__PURE__*/React.createElement("span", null, e.pres2, e.fac2 > 0 ? /*#__PURE__*/React.createElement("span", { className: "text-stone-400" }, " \xD7 " + fmtN(e.fac2) + " " + e.unidad) : '') : /*#__PURE__*/React.createElement("span", { className: "text-stone-300" }, "\u2014")),
       /*#__PURE__*/React.createElement("td", { className: td + ' text-right font-mono text-stone-800' }, e.pres1 && e.comp1 !== '' ? /*#__PURE__*/React.createElement("span", null, fmtN(e.comp1), " ", e.pres1, e.pres2 && e.comp2 ? ' + ' + fmtN(e.comp2) + ' ' + e.pres2 : '') : /*#__PURE__*/React.createElement("span", null, fmtN(e.conDesp), " ", e.unidad))
     );
-    return divsC.map(dNom => /*#__PURE__*/React.createElement(React.Fragment, { key: 'divc-' + dNom },
+    return rubsC.map(rp => { const g = grupoDe(rp); return g && /*#__PURE__*/React.createElement(React.Fragment, { key: 'rubc-' + rp },
       /*#__PURE__*/React.createElement("tr", { className: 'bg-amber-600 text-white' },
-        /*#__PURE__*/React.createElement("td", { className: td + ' font-semibold uppercase tracking-wide text-xs', colSpan: 5 }, dNom)
+        /*#__PURE__*/React.createElement("td", { className: td + ' font-semibold uppercase tracking-wide text-xs', colSpan: 5 }, g.rp + " \xB7 " + g.nombre)
       ),
-      gruposAll[dNom].map(filaC)
-    ));
+      g.mats.map(filaC)
+    ); });
   })()))));
   })(),
     explosion.length > 0 && subExp === 'comparativa' && (() => {
@@ -4506,7 +4541,13 @@ function ObraView({
       setObra({ ...obra, cotizaciones: next });
     };
     return /*#__PURE__*/React.createElement("div", null,
-      /*#__PURE__*/React.createElement("p", { className: "noprint text-xs text-stone-500 mb-2" }, "Carg\xE1 el precio UNITARIO (por unidad de medida) de cada proveedor y eleg\xED si es con o sin IVA. La comparaci\xF3n del m\xE1s barato se hace siempre sobre el TOTAL con IVA. El bot\xF3n \u201Cusar\u201D copia ese unitario a la Lista de materiales."),
+      /*#__PURE__*/React.createElement("div", { className: "noprint flex items-center justify-between mb-2 gap-3" },
+        /*#__PURE__*/React.createElement("p", { className: "text-xs text-stone-500" }, "Carg\xE1 el precio UNITARIO (por unidad de medida) de cada proveedor y eleg\xED si es con o sin IVA. La comparaci\xF3n del m\xE1s barato se hace siempre sobre el TOTAL con IVA. El bot\xF3n \u201Cusar\u201D copia ese unitario a la Lista de materiales."),
+        /*#__PURE__*/React.createElement("button", {
+          onClick: () => window.print(),
+          className: "flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium bg-amber-600 text-white hover:bg-amber-700 whitespace-nowrap shrink-0"
+        }, "Imprimir comparativa")
+      ),
       /*#__PURE__*/React.createElement("div", { className: "bg-white border border-stone-300 rounded overflow-x-auto" },
       /*#__PURE__*/React.createElement("table", { className: "w-full text-sm" },
         /*#__PURE__*/React.createElement("thead", null,
@@ -4568,11 +4609,13 @@ function ObraView({
                 const u = Number(ps[i] && ps[i].precio) || 0;
                 const esGan = i === idxGanador;
                 return /*#__PURE__*/React.createElement("td", { key: 'pr-' + i, className: td + (esGan ? ' bg-green-50' : '') },
-                  /*#__PURE__*/React.createElement("input", {
-                    type: "number", placeholder: "$/" + (e.unidad || 'un'), value: (ps[i] && ps[i].precio) || '',
-                    onChange: ev => setCampo(e.cod, i, 'precio', ev.target.value),
-                    className: "noprint w-full border border-stone-300 rounded px-2 py-1 text-right text-sm " + (esGan ? 'font-semibold text-green-700' : '')
-                  }),
+                  /*#__PURE__*/React.createElement("div", { className: "noprint" },
+                    /*#__PURE__*/React.createElement(EditMoney, {
+                      value: (ps[i] && ps[i].precio) || '',
+                      placeholder: "$/" + (e.unidad || 'un'),
+                      onCommit: v => setCampo(e.cod, i, 'precio', v)
+                    })
+                  ),
                   /*#__PURE__*/React.createElement("div", { className: "noprint flex items-center justify-end gap-1 mt-0.5" },
                     /*#__PURE__*/React.createElement("span", { className: "text-[10px] text-stone-400 font-mono" }, totales[i] > 0 ? ('Tot ' + money(totales[i])) : ''),
                     u > 0 && /*#__PURE__*/React.createElement("button", {
