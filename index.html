@@ -4482,12 +4482,13 @@ function ObraView({
     const nuevoProv = () => ({ nombre: '', precio: '', iva: 'sin' });
     const nuevoEntry = () => ({ p: [nuevoProv(), nuevoProv(), nuevoProv()] });
     const getPs = cod => (cot[cod] && cot[cod].p) || [nuevoProv(), nuevoProv(), nuevoProv()];
-    // total con IVA de un proveedor para un ítem (lo que realmente se paga)
+    // Total a pagar al proveedor: precio cargado × cantidad a comprar, SIN modificar.
+    // El selector 'con/sin IVA' es informativo (etiqueta la base del precio cargado), no altera el cálculo.
+    // Recomendación: cargar todos los proveedores en la misma base (precio final de remito) para comparar parejo.
     const totalConIVA = (e, prov) => {
       const u = Number(prov && prov.precio) || 0;
       if (u <= 0) return 0;
-      const unitConIVA = (prov.iva === 'con') ? u : u * (1 + IVA);
-      return unitConIVA * (Number(e.totalComprar) || 0);
+      return u * (Number(e.totalComprar) || 0);
     };
     const setCampo = (cod, idx, campo, val) => {
       const prev = obra.cotizaciones || {};
@@ -4542,7 +4543,7 @@ function ObraView({
     };
     return /*#__PURE__*/React.createElement("div", null,
       /*#__PURE__*/React.createElement("div", { className: "noprint flex items-center justify-between mb-2 gap-3" },
-        /*#__PURE__*/React.createElement("p", { className: "text-xs text-stone-500" }, "Carg\xE1 el precio UNITARIO (por unidad de medida) de cada proveedor y eleg\xED si es con o sin IVA. La comparaci\xF3n del m\xE1s barato se hace siempre sobre el TOTAL con IVA. El bot\xF3n \u201Cusar\u201D copia ese unitario a la Lista de materiales."),
+        /*#__PURE__*/React.createElement("p", { className: "text-xs text-stone-500" }, "Carg\xE1 el precio UNITARIO (por unidad de medida) de cada proveedor. El total = precio \xD7 cantidad a comprar, tal cual lo carg\xE1s. El selector con/sin IVA solo etiqueta la base; carg\xE1 todos los proveedores en la misma base para comparar parejo. El bot\xF3n \u201Cusar\u201D copia ese unitario a la Lista de materiales."),
         /*#__PURE__*/React.createElement("button", {
           onClick: () => window.print(),
           className: "flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium bg-amber-600 text-white hover:bg-amber-700 whitespace-nowrap shrink-0"
@@ -4641,7 +4642,7 @@ function ObraView({
         })()),
         /*#__PURE__*/React.createElement("tfoot", null,
           /*#__PURE__*/React.createElement("tr", { className: "bg-stone-100 font-semibold" },
-            /*#__PURE__*/React.createElement("td", { className: td, colSpan: 7 }, "Total comprando el m\xE1s barato de cada \xEDtem (con IVA)"),
+            /*#__PURE__*/React.createElement("td", { className: td, colSpan: 7 }, "Total comprando el m\xE1s barato de cada \xEDtem"),
             /*#__PURE__*/React.createElement("td", { className: td + ' text-center text-green-800' }, money(totalGanador))
           )
         )
