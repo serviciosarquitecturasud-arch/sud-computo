@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html lang="es"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -19,7 +18,10 @@ html, body, button, input, select, textarea {
 </style>
 <style>
 .onlyprint { display: none; }
+.comp-sticky { background: #fff; }
 @media print {
+  .comp-sticky { position: static !important; }
+  .cmp-noimpr { display: none !important; }
   /* Fondo blanco global — la app en pantalla tiene grises sutiles que en
      impresión consumen mucha tinta y no aportan. */
   html, body { background: #ffffff !important; }
@@ -325,7 +327,7 @@ html, body, button, input, select, textarea {
 <script src="https://accounts.google.com/gsi/client" async="" defer=""></script>
 <style id="googleidentityservice_button_styles">.qJTHM{-moz-user-select:none;-webkit-user-select:none;-ms-user-select:none;color:#202124;direction:ltr;-webkit-touch-callout:none;font-family:Roboto-Regular,arial,sans-serif;-webkit-font-smoothing:antialiased;font-weight:400;margin:0;overflow:hidden;-webkit-text-size-adjust:100%}.ynRLnc{left:-9999px;position:absolute;top:-9999px}.L6cTce{display:none}.bltWBb{overflow-wrap:break-word;word-break:break-word}.hSRGPd{color:#1a73e8;cursor:pointer;font-weight:500;text-decoration:none}.Bz112c-W3lGp{height:16px;width:16px}.Bz112c-E3DyYd{height:20px;width:20px}.Bz112c-r9oPif{height:24px;width:24px}.Bz112c-u2z5K{height:36px;width:36px}.Bz112c-uaxL4e{border-radius:10px}.LgbsSe-Bz112c{display:block}.S9gUrf-YoZ4jf{border:none;margin:0;padding:0}.S9gUrf-YoZ4jf *{border:none;margin:0;padding:0}.fFW7wc-ibnC6b>.aZ2wEe>div{border-color:#4285f4}.P1ekSe-ZMv3u{-webkit-transition:height .2s linear;transition:height .2s linear}.P1ekSe-ZMv3u>div:first-child{background-color:#1a73e8!important;-webkit-transition:width .3s linear;transition:width .3s linear}.P1ekSe-ZMv3u>div:nth-child(2){background-image:-webkit-gradient(linear,left top,right top,from(rgba(255,255,255,.7)),to(rgba(255,255,255,.7))),-webkit-gradient(linear,left top,right top,from(#1a73e8),to(#1a73e8))!important;background-image:-webkit-linear-gradient(left,rgba(255,255,255,.7),rgba(255,255,255,.7)),-webkit-linear-gradient(left,#1a73e8,#1a73e8)!important;background-image:linear-gradient(90deg,rgba(255,255,255,.7),rgba(255,255,255,.7)),linear-gradient(90deg,#1a73e8,#1a73e8)!important}.P1ekSe-ZMv3u>div:nth-child(3){background-image:-webkit-gradient(linear,left top,right top,from(rgba(255,255,255,.7)),to(rgba(255,255,255,.7))),-webkit-gradient(linear,left top,right top,from(#1a73e8),to(#1a73e8))!important;background-image:-webkit-linear-gradient(left,rgba(255,255,255,.7),rgba(255,255,255,.7)),-webkit-linear-gradient(left,#1a73e8,#1a73e8)!important;background-image:linear-gradient(90deg,rgba(255,255,255,.7),rgba(255,255,255,.7)),linear-gradient(90deg,#1a73e8,#1a73e8)!important}.haAclf{display:inline-block}.nsm7Bb-HzV7m-LgbsSe{border-radius:4px;box-sizing:border-box;-webkit-transition:background-color .218s,border-color .218s;transition:background-color .218s,border-color .218s;-moz-user-select:none;-webkit-user-select:none;-ms-user-select:none;-webkit-appearance:none;background-color:#fff;background-image:none;border:1px solid #dadce0;color:#3c4043;cursor:pointer;font-family:Google Sans,arial,sans-serif;font-size:14px;height:40px;letter-spacing:.25px;outline:none;overflow:hidden;padding:0 12px;position:relative;text-align:center;vertical-align:middle;white-space:nowrap;width:auto}@media screen and (-ms-high-contrast:active){.nsm7Bb-HzV7m-LgbsSe{border:2px solid windowText;color:windowText}}@media screen and (preferes-contrast:more){.nsm7Bb-HzV7m-LgbsSe{color:#000}}.nsm7Bb-HzV7m-LgbsSe.pSzOP-SxQuSe{font-size:14px;height:32px;letter-spacing:.25px;padding:0 10px}.nsm7Bb-HzV7m-LgbsSe.purZT-SxQuSe{font-size:11px;height:20px;letter-spacing:.3px;padding:0 8px}.nsm7Bb-HzV7m-LgbsSe.Bz112c-LgbsSe{padding:0;width:40px}.nsm7Bb-HzV7m-LgbsSe.Bz112c-LgbsSe.pSzOP-SxQuSe{width:32px}.nsm7Bb-HzV7m-LgbsSe.Bz112c-LgbsSe.purZT-SxQuSe{width:20px}.nsm7Bb-HzV7m-LgbsSe.JGcpL-RbRzK{border-radius:20px}.nsm7Bb-HzV7m-LgbsSe.JGcpL-RbRzK.pSzOP-SxQuSe{border-radius:16px}.nsm7Bb-HzV7m-LgbsSe.JGcpL-RbRzK.purZT-SxQuSe{border-radius:10px}.nsm7Bb-HzV7m-LgbsSe.MFS4be-Ia7Qfc{border:none;color:#fff}.nsm7Bb-HzV7m-LgbsSe.MFS4be-v3pZbf-Ia7Qfc{background-color:#1a73e8}.nsm7Bb-HzV7m-LgbsSe.MFS4be-JaPV2b-Ia7Qfc{background-color:#202124;color:#e8eaed}@media screen and (prefers-contrast:more){.nsm7Bb-HzV7m-LgbsSe.MFS4be-JaPV2b-Ia7Qfc{color:#fff}}.nsm7Bb-HzV7m-LgbsSe .nsm7Bb-HzV7m-LgbsSe-Bz112c{height:18px;margin-right:8px;min-width:18px;width:18px}.nsm7Bb-HzV7m-LgbsSe.pSzOP-SxQuSe .nsm7Bb-HzV7m-LgbsSe-Bz112c{height:14px;min-width:14px;width:14px}.nsm7Bb-HzV7m-LgbsSe.purZT-SxQuSe .nsm7Bb-HzV7m-LgbsSe-Bz112c{height:10px;min-width:10px;width:10px}.nsm7Bb-HzV7m-LgbsSe.jVeSEe .nsm7Bb-HzV7m-LgbsSe-Bz112c{margin-left:8px;margin-right:-4px}.nsm7Bb-HzV7m-LgbsSe.Bz112c-LgbsSe .nsm7Bb-HzV7m-LgbsSe-Bz112c{margin:0;padding:10px}.nsm7Bb-HzV7m-LgbsSe.Bz112c-LgbsSe.pSzOP-SxQuSe .nsm7Bb-HzV7m-LgbsSe-Bz112c{padding:8px}.nsm7Bb-HzV7m-LgbsSe.Bz112c-LgbsSe.purZT-SxQuSe .nsm7Bb-HzV7m-LgbsSe-Bz112c{padding:4px}.nsm7Bb-HzV7m-LgbsSe .nsm7Bb-HzV7m-LgbsSe-Bz112c-haAclf{border-top-left-radius:3px;border-bottom-left-radius:3px;display:-webkit-box;display:-webkit-flex;display:flex;-webkit-box-pack:center;-webkit-justify-content:center;justify-content:center;-webkit-box-align:center;-webkit-align-items:center;align-items:center;background-color:#fff;height:36px;margin-left:-10px;margin-right:12px;min-width:36px;width:36px}.nsm7Bb-HzV7m-LgbsSe .nsm7Bb-HzV7m-LgbsSe-Bz112c-haAclf .nsm7Bb-HzV7m-LgbsSe-Bz112c,.nsm7Bb-HzV7m-LgbsSe.Bz112c-LgbsSe .nsm7Bb-HzV7m-LgbsSe-Bz112c-haAclf .nsm7Bb-HzV7m-LgbsSe-Bz112c{margin:0;padding:0}.nsm7Bb-HzV7m-LgbsSe.pSzOP-SxQuSe .nsm7Bb-HzV7m-LgbsSe-Bz112c-haAclf{height:28px;margin-left:-8px;margin-right:10px;min-width:28px;width:28px}.nsm7Bb-HzV7m-LgbsSe.purZT-SxQuSe .nsm7Bb-HzV7m-LgbsSe-Bz112c-haAclf{height:16px;margin-left:-6px;margin-right:8px;min-width:16px;width:16px}.nsm7Bb-HzV7m-LgbsSe.Bz112c-LgbsSe .nsm7Bb-HzV7m-LgbsSe-Bz112c-haAclf{border-radius:3px;margin-left:2px;margin-right:0;padding:0}.nsm7Bb-HzV7m-LgbsSe.JGcpL-RbRzK .nsm7Bb-HzV7m-LgbsSe-Bz112c-haAclf{border-radius:18px}.nsm7Bb-HzV7m-LgbsSe.pSzOP-SxQuSe.JGcpL-RbRzK .nsm7Bb-HzV7m-LgbsSe-Bz112c-haAclf{border-radius:14px}.nsm7Bb-HzV7m-LgbsSe.purZT-SxQuSe.JGcpL-RbRzK .nsm7Bb-HzV7m-LgbsSe-Bz112c-haAclf{border-radius:8px}.nsm7Bb-HzV7m-LgbsSe .nsm7Bb-HzV7m-LgbsSe-bN97Pc-sM5MNb{display:-webkit-box;display:-webkit-flex;display:flex;-webkit-align-items:center;-webkit-box-align:center;align-items:center;-webkit-flex-direction:row;-webkit-box-orient:horizontal;-webkit-box-direction:normal;flex-direction:row;-webkit-box-pack:justify;-webkit-justify-content:space-between;justify-content:space-between;-webkit-flex-wrap:nowrap;flex-wrap:nowrap;height:100%;position:relative;width:100%}.nsm7Bb-HzV7m-LgbsSe .oXtfBe-l4eHX{-webkit-box-pack:center;-webkit-justify-content:center;justify-content:center}.nsm7Bb-HzV7m-LgbsSe .nsm7Bb-HzV7m-LgbsSe-BPrWId{-webkit-flex-grow:1;-webkit-box-flex:1;flex-grow:1;font-family:Google Sans,arial,sans-serif;font-weight:500;overflow:hidden;text-overflow:ellipsis;vertical-align:top}.nsm7Bb-HzV7m-LgbsSe.purZT-SxQuSe .nsm7Bb-HzV7m-LgbsSe-BPrWId{font-weight:300}.nsm7Bb-HzV7m-LgbsSe .oXtfBe-l4eHX .nsm7Bb-HzV7m-LgbsSe-BPrWId{-webkit-flex-grow:0;-webkit-box-flex:0;flex-grow:0}.nsm7Bb-HzV7m-LgbsSe .nsm7Bb-HzV7m-LgbsSe-MJoBVe{-webkit-transition:background-color .218s;transition:background-color .218s;bottom:0;left:0;position:absolute;right:0;top:0}.nsm7Bb-HzV7m-LgbsSe:focus,.nsm7Bb-HzV7m-LgbsSe:hover{box-shadow:none;border-color:rgb(210,227,252);outline:none}.nsm7Bb-HzV7m-LgbsSe:focus-within{outline:2px solid #00639b;border-color:transparent}.nsm7Bb-HzV7m-LgbsSe:hover .nsm7Bb-HzV7m-LgbsSe-MJoBVe{background:rgba(66,133,244,.08)}.nsm7Bb-HzV7m-LgbsSe:active .nsm7Bb-HzV7m-LgbsSe-MJoBVe,.nsm7Bb-HzV7m-LgbsSe:focus .nsm7Bb-HzV7m-LgbsSe-MJoBVe{background:rgba(66,133,244,.1)}.nsm7Bb-HzV7m-LgbsSe.MFS4be-Ia7Qfc:hover .nsm7Bb-HzV7m-LgbsSe-MJoBVe{background:rgba(255,255,255,.24)}.nsm7Bb-HzV7m-LgbsSe.MFS4be-Ia7Qfc:active .nsm7Bb-HzV7m-LgbsSe-MJoBVe,.nsm7Bb-HzV7m-LgbsSe.MFS4be-Ia7Qfc:focus .nsm7Bb-HzV7m-LgbsSe-MJoBVe{background:rgba(255,255,255,.32)}.nsm7Bb-HzV7m-LgbsSe .n1UuX-DkfjY{border-radius:50%;display:-webkit-box;display:-webkit-flex;display:flex;height:20px;margin-left:-4px;margin-right:8px;min-width:20px;width:20px}.nsm7Bb-HzV7m-LgbsSe.jVeSEe .nsm7Bb-HzV7m-LgbsSe-BPrWId{font-family:Roboto;font-size:12px;text-align:left}.nsm7Bb-HzV7m-LgbsSe.jVeSEe .nsm7Bb-HzV7m-LgbsSe-BPrWId .K4efff .fmcmS,.nsm7Bb-HzV7m-LgbsSe.jVeSEe .nsm7Bb-HzV7m-LgbsSe-BPrWId .ssJRIf{overflow:hidden;text-overflow:ellipsis}.nsm7Bb-HzV7m-LgbsSe.jVeSEe .nsm7Bb-HzV7m-LgbsSe-BPrWId .K4efff{display:-webkit-box;display:-webkit-flex;display:flex;-webkit-align-items:center;-webkit-box-align:center;align-items:center;color:#5f6368;fill:#5f6368;font-size:11px;font-weight:400}.nsm7Bb-HzV7m-LgbsSe.jVeSEe.MFS4be-Ia7Qfc .nsm7Bb-HzV7m-LgbsSe-BPrWId .K4efff{color:#e8eaed;fill:#e8eaed}@media screen and (prefers-contrast:more){.nsm7Bb-HzV7m-LgbsSe.jVeSEe .nsm7Bb-HzV7m-LgbsSe-BPrWId .K4efff,.nsm7Bb-HzV7m-LgbsSe.jVeSEe.MFS4be-Ia7Qfc .nsm7Bb-HzV7m-LgbsSe-BPrWId .K4efff{color:#000;fill:#000}}.nsm7Bb-HzV7m-LgbsSe.jVeSEe .nsm7Bb-HzV7m-LgbsSe-BPrWId .K4efff .Bz112c{height:18px;margin:-3px -3px -3px 2px;min-width:18px;width:18px}.nsm7Bb-HzV7m-LgbsSe.jVeSEe .nsm7Bb-HzV7m-LgbsSe-Bz112c-haAclf{border-top-left-radius:0;border-bottom-left-radius:0;border-top-right-radius:3px;border-bottom-right-radius:3px;margin-left:12px;margin-right:-10px}.nsm7Bb-HzV7m-LgbsSe.jVeSEe.JGcpL-RbRzK .nsm7Bb-HzV7m-LgbsSe-Bz112c-haAclf{border-radius:18px}.L5Fo6c-sM5MNb{border:0;display:block;left:0;position:relative;top:0}.L5Fo6c-bF1uUb{border-radius:4px;bottom:0;cursor:pointer;left:0;position:absolute;right:0;top:0}.L5Fo6c-bF1uUb:focus{border:none;outline:none}sentinel{}</style></head>
 <body>
-<div id="root"><div class="min-h-screen bg-stone-100 text-stone-800"><header class="noprint" style="background: linear-gradient(118deg, rgb(117, 164, 190) 0%, rgb(184, 168, 149) 28%, rgb(254, 252, 231) 52%, rgb(217, 154, 94) 78%, rgb(241, 134, 66) 100%), linear-gradient(transparent 0%, transparent 55%, rgba(72, 82, 48, 0.35) 100%); background-blend-mode: multiply; color: rgb(28, 25, 23); box-shadow: rgba(0, 0, 0, 0.15) 0px 2px 12px; position: relative;"><div class="max-w-7xl mx-auto px-5 py-5 flex items-center gap-4" style="position: relative; z-index: 1;"><div><div style="font-family: &quot;Acid Grotesk&quot;, Inter, &quot;Helvetica Neue&quot;, system-ui, sans-serif; font-size: 28px; font-weight: 500; line-height: 1; letter-spacing: 0.01em; color: rgb(28, 25, 23);">Cómputo y Presupuesto</div><div style="font-family: &quot;Acid Grotesk&quot;, Inter, &quot;Helvetica Neue&quot;, system-ui, sans-serif; font-size: 13px; font-weight: 400; margin-top: 6px; color: rgba(28, 25, 23, 0.7); letter-spacing: 0.02em;">Obra · Argentina · v1</div></div></div><nav class="max-w-7xl mx-auto px-5 flex gap-1 overflow-x-auto items-center" style="background-color: rgba(28, 25, 23, 0.85); backdrop-filter: blur(6px); border-top: 1px solid rgba(255, 255, 255, 0.08); position: relative; z-index: 1;"><button class="flex items-center gap-1.5 px-3 py-2 text-sm whitespace-nowrap border-b-2 border-amber-500 text-white"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"></path><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"></path><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"></path><path d="M10 6h4M10 10h4M10 14h4M10 18h4"></path></svg>Obras</button><button class="flex items-center gap-1.5 px-3 py-2 text-sm whitespace-nowrap border-b-2 border-transparent text-stone-400 hover:text-stone-200"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"></path><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"></path><path d="M7 21h10"></path><path d="M12 3v18"></path><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"></path></svg>Comparar</button><button class="flex items-center gap-1.5 px-3 py-2 text-sm whitespace-nowrap border-b-2 border-transparent text-stone-400 hover:text-stone-200"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"></path><path d="m3.3 7 8.7 5 8.7-5"></path><path d="M12 22V12"></path></svg>Materiales</button><button class="flex items-center gap-1.5 px-3 py-2 text-sm whitespace-nowrap border-b-2 border-transparent text-stone-400 hover:text-stone-200"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1Z"></path><path d="M10 10V5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5M4 15v-3a6 6 0 0 1 6-6M20 15v-3a6 6 0 0 0-6-6"></path></svg>Mano de obra</button><button class="flex items-center gap-1.5 px-3 py-2 text-sm whitespace-nowrap border-b-2 border-transparent text-stone-400 hover:text-stone-200"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76Z"></path></svg>Equipos</button><button class="flex items-center gap-1.5 px-3 py-2 text-sm whitespace-nowrap border-b-2 border-transparent text-stone-400 hover:text-stone-200"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12h-8M21 6H8M21 18h-8M3 6v4c0 1.1.9 2 2 2h3M3 10v6c0 1.1.9 2 2 2h3"></path></svg>Rubros</button><button class="flex items-center gap-1.5 px-3 py-2 text-sm whitespace-nowrap border-b-2 border-transparent text-stone-400 hover:text-stone-200"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"></path><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"></path><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"></path></svg>APUs</button><button class="flex items-center gap-1.5 px-3 py-2 text-sm whitespace-nowrap border-b-2 border-transparent text-stone-400 hover:text-stone-200"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"></path></svg>Revit</button><button class="flex items-center gap-1.5 px-3 py-2 text-sm whitespace-nowrap border-b-2 border-transparent text-stone-400 hover:text-stone-200"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"></path></svg>Respaldo</button><button class="flex items-center gap-1.5 px-3 py-2 text-sm whitespace-nowrap border-b-2 border-transparent text-stone-400 hover:text-stone-200"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect width="12" height="8" x="6" y="14"></rect></svg>Imprimir</button><div class="ml-auto flex items-center gap-1.5 pl-3 shrink-0"><div style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 3px 2px 9px; border-radius: 999px; font-size: 11px; font-family: system-ui, sans-serif; white-space: nowrap; font-weight: 500; letter-spacing: 0.01em; border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(34, 197, 94, 0.18); color: rgb(134, 239, 172);"><span title="Conectado a Drive: Conectado" style="max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">☁ Conectado</span><button title="Desconectar" style="background: rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.75); border-width: medium; border-style: none; border-color: currentcolor; border-image: initial; padding: 2px 6px; border-radius: 999px; font-size: 10px; cursor: pointer; font-family: system-ui, sans-serif;">✕</button><button title="Forzar backup ahora a Drive" style="background: rgba(255, 255, 255, 0.12); color: rgba(255, 255, 255, 0.9); border-width: medium; border-style: none; border-color: currentcolor; border-image: initial; padding: 2px 8px; border-radius: 999px; font-size: 10px; cursor: pointer; font-family: system-ui, sans-serif; white-space: nowrap; font-weight: 500;">⤴ Subir</button></div><div class="noprint flex items-center gap-1.5"><div title="Estado del guardado en este navegador" style="display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-family: system-ui, sans-serif; white-space: nowrap; font-weight: 500; letter-spacing: 0.01em; border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(34, 197, 94, 0.18); color: rgb(134, 239, 172);"><span>✓</span><span>Guardado hace 6min</span></div><div title="Estado de Google Drive" style="display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-family: system-ui, sans-serif; white-space: nowrap; font-weight: 500; letter-spacing: 0.01em; border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(34, 197, 94, 0.18); color: rgb(134, 239, 172);"><span>☁✓</span><span>Drive hace 5min</span></div></div></div></nav></header><main class="max-w-7xl mx-auto px-5 py-6"><div><div class="flex items-center justify-between mb-4"><div class="mb-4"><h2 class="font-serif text-2xl text-stone-800">Obras</h2><p class="text-sm text-stone-500 mt-0.5">Cada obra tiene su propio cómputo y presupuesto. El catálogo de precios y APUs es compartido.</p></div><button class="inline-flex items-center gap-1.5 font-medium rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-sm px-3.5 py-2 bg-stone-800 text-white hover:bg-stone-900"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5v14"></path></svg>Nueva obra</button></div><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"><div class="bg-white border border-stone-300 rounded p-4 flex flex-col"><div class="flex items-start justify-between"><button class="text-left flex-1"><div class="font-serif text-lg text-stone-800 leading-tight">Melicue 4458</div><div class="text-xs text-stone-500 mt-0.5">Nicolas Rocca</div></button></div><div class="text-xs text-stone-500 mt-3 space-y-0.5"><div>39 ítems computados</div><div>Cotización: <span class="text-stone-700">31/05/2026</span></div><div>Costo directo: <span class="font-mono text-stone-700">$ 47.467.311,44</span></div><div>Precio de venta: <span class="font-mono text-stone-800">$ 65.457.207,23</span></div><div>$/m² equivalente: <span class="font-mono text-amber-700">$ 333.995,16</span></div></div><div class="flex gap-2 mt-3 pt-3 border-t border-stone-100"><button class="inline-flex items-center gap-1.5 font-medium rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-xs px-2.5 py-1.5 bg-white text-stone-700 border border-stone-300 hover:bg-stone-50"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"></path></svg>Abrir</button><button class="inline-flex items-center gap-1.5 font-medium rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-xs px-2.5 py-1.5 bg-white text-stone-700 border border-stone-300 hover:bg-stone-50">Duplicar</button><button class="ml-auto text-stone-300 hover:text-red-600"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"></path></svg></button></div></div><div class="bg-white border border-stone-300 rounded p-4 flex flex-col"><div class="flex items-start justify-between"><button class="text-left flex-1"><div class="font-serif text-lg text-stone-800 leading-tight">Casa Demo · Vivienda 110m² (precios mayo 2026)</div><div class="text-xs text-stone-500 mt-0.5">DEMO - precios de referencia, verificar contra revista del mes</div></button></div><div class="text-xs text-stone-500 mt-3 space-y-0.5"><div>29 ítems computados</div><div>Costo directo: <span class="font-mono text-stone-700">$ 163.304.348,24</span></div><div>Precio de venta: <span class="font-mono text-stone-800">$ 228.628.228,08</span></div></div><div class="flex gap-2 mt-3 pt-3 border-t border-stone-100"><button class="inline-flex items-center gap-1.5 font-medium rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-xs px-2.5 py-1.5 bg-white text-stone-700 border border-stone-300 hover:bg-stone-50"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"></path></svg>Abrir</button><button class="inline-flex items-center gap-1.5 font-medium rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-xs px-2.5 py-1.5 bg-white text-stone-700 border border-stone-300 hover:bg-stone-50">Duplicar</button><button class="ml-auto text-stone-300 hover:text-red-600"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"></path></svg></button></div></div></div></div></main><footer class="noprint" style="background: linear-gradient(rgb(250, 250, 249) 0%, rgb(245, 245, 244) 100%); border-top: 1px solid rgb(214, 211, 209); margin-top: 40px;"><div class="max-w-7xl mx-auto px-5 py-6" style="display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; flex-wrap: wrap;"><div style="font-size: 12px; color: rgb(87, 83, 78); line-height: 1.7;"><div style="font-family: ui-sans-serif, system-ui, sans-serif; font-size: 20px; font-weight: 300; color: rgb(28, 25, 23); letter-spacing: 0.01em; margin-bottom: 8px;">SUD_estudio</div><div>11.7368.4530 · serviciosarquitectura.sud@gmail.com · @sud_estudio</div></div><div style="font-size: 11px; color: rgb(168, 162, 158); text-align: right; max-width: 420px; line-height: 1.5;">Cómputo y presupuesto · catálogos, biblioteca de APUs, planificación, suministro y control de obra. Los datos se guardan en este navegador — exportá un respaldo desde la pestaña Respaldo.</div></div></footer></div></div>
+<div id="root"><div class="min-h-screen bg-stone-100 text-stone-800"><header class="noprint" style="background: linear-gradient(118deg, rgb(117, 164, 190) 0%, rgb(184, 168, 149) 28%, rgb(254, 252, 231) 52%, rgb(217, 154, 94) 78%, rgb(241, 134, 66) 100%), linear-gradient(transparent 0%, transparent 55%, rgba(72, 82, 48, 0.35) 100%); background-blend-mode: multiply; color: rgb(28, 25, 23); box-shadow: rgba(0, 0, 0, 0.15) 0px 2px 12px; position: relative;"><div class="max-w-7xl mx-auto px-5 py-5 flex items-center gap-4" style="position: relative; z-index: 1;"><div><div style="font-family: &quot;Acid Grotesk&quot;, Inter, &quot;Helvetica Neue&quot;, system-ui, sans-serif; font-size: 28px; font-weight: 500; line-height: 1; letter-spacing: 0.01em; color: rgb(28, 25, 23);">Cómputo y Presupuesto</div><div style="font-family: &quot;Acid Grotesk&quot;, Inter, &quot;Helvetica Neue&quot;, system-ui, sans-serif; font-size: 13px; font-weight: 400; margin-top: 6px; color: rgba(28, 25, 23, 0.7); letter-spacing: 0.02em;">Obra · Argentina · v1</div></div></div><nav class="max-w-7xl mx-auto px-5 flex gap-1 overflow-x-auto items-center" style="background-color: rgba(28, 25, 23, 0.85); backdrop-filter: blur(6px); border-top: 1px solid rgba(255, 255, 255, 0.08); position: relative; z-index: 1;"><button class="flex items-center gap-1.5 px-3 py-2 text-sm whitespace-nowrap border-b-2 border-transparent text-stone-400 hover:text-stone-200"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"></path><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"></path><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"></path><path d="M10 6h4M10 10h4M10 14h4M10 18h4"></path></svg>Obras</button><button class="flex items-center gap-1.5 px-3 py-2 text-sm whitespace-nowrap border-b-2 border-transparent text-stone-400 hover:text-stone-200"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"></path><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"></path><path d="M7 21h10"></path><path d="M12 3v18"></path><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"></path></svg>Comparar</button><button class="flex items-center gap-1.5 px-3 py-2 text-sm whitespace-nowrap border-b-2 border-transparent text-stone-400 hover:text-stone-200"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"></path><path d="m3.3 7 8.7 5 8.7-5"></path><path d="M12 22V12"></path></svg>Materiales</button><button class="flex items-center gap-1.5 px-3 py-2 text-sm whitespace-nowrap border-b-2 border-transparent text-stone-400 hover:text-stone-200"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1Z"></path><path d="M10 10V5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5M4 15v-3a6 6 0 0 1 6-6M20 15v-3a6 6 0 0 0-6-6"></path></svg>Mano de obra</button><button class="flex items-center gap-1.5 px-3 py-2 text-sm whitespace-nowrap border-b-2 border-transparent text-stone-400 hover:text-stone-200"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76Z"></path></svg>Equipos</button><button class="flex items-center gap-1.5 px-3 py-2 text-sm whitespace-nowrap border-b-2 border-transparent text-stone-400 hover:text-stone-200"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12h-8M21 6H8M21 18h-8M3 6v4c0 1.1.9 2 2 2h3M3 10v6c0 1.1.9 2 2 2h3"></path></svg>Rubros</button><button class="flex items-center gap-1.5 px-3 py-2 text-sm whitespace-nowrap border-b-2 border-transparent text-stone-400 hover:text-stone-200"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"></path><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"></path><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"></path></svg>APUs</button><button class="flex items-center gap-1.5 px-3 py-2 text-sm whitespace-nowrap border-b-2 border-transparent text-stone-400 hover:text-stone-200"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"></path></svg>Revit</button><button class="flex items-center gap-1.5 px-3 py-2 text-sm whitespace-nowrap border-b-2 border-amber-500 text-white"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"></path></svg>Respaldo</button><button class="flex items-center gap-1.5 px-3 py-2 text-sm whitespace-nowrap border-b-2 border-transparent text-stone-400 hover:text-stone-200"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect width="12" height="8" x="6" y="14"></rect></svg>Imprimir</button><div class="ml-auto flex items-center gap-1.5 pl-3 shrink-0"><button title="Conectar tu cuenta de Google Drive para backup automático en la nube" style="display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-family: system-ui, sans-serif; white-space: nowrap; font-weight: 500; letter-spacing: 0.01em; border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(255, 255, 255, 0.08); color: rgba(255, 255, 255, 0.9); cursor: pointer;">☁ Conectar Drive</button><div class="noprint flex items-center gap-1.5"><div title="Estado del guardado en este navegador" style="display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-family: system-ui, sans-serif; white-space: nowrap; font-weight: 500; letter-spacing: 0.01em; border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(34, 197, 94, 0.18); color: rgb(134, 239, 172);"><span>✓</span><span>Guardado hace 2min</span></div></div></div></nav></header><main class="max-w-7xl mx-auto px-5 py-6"><div class="max-w-2xl"><div class="mb-4"><h2 class="font-serif text-2xl text-stone-800">Respaldo de datos</h2><p class="text-sm text-stone-500 mt-0.5">Tus datos viven en este navegador. Exportá un respaldo seguido — es el reemplazo del versionado de archivos del Excel.</p></div><div class="space-y-3"><div class="bg-white border border-stone-300 rounded p-4"><div class="font-medium text-stone-800 mb-1">Exportar respaldo</div><p class="text-sm text-stone-500 mb-3">Descarga un archivo .json con todo: catálogo, APUs, obras (con su trazabilidad Revit) y biblioteca de mapeos Revit. Guardalo en tu Drive.</p><button class="inline-flex items-center gap-1.5 font-medium rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-sm px-3.5 py-2 bg-stone-800 text-white hover:bg-stone-900"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"></path></svg>Descargar respaldo</button></div><div class="bg-white border border-stone-300 rounded p-4"><div class="font-medium text-stone-800 mb-1">Importar respaldo</div><p class="text-sm text-stone-500 mb-3">Restaura un respaldo previo. Reemplaza los datos actuales (se muestra resumen antes de aplicar).</p><input type="file" accept=".json" class="hidden"><button class="inline-flex items-center gap-1.5 font-medium rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-sm px-3.5 py-2 bg-white text-stone-700 border border-stone-300 hover:bg-stone-50"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"></path></svg>Elegir archivo</button></div><div class="bg-white border border-stone-300 rounded p-4"><div class="font-medium text-stone-800 mb-1">Importar obra individual</div><p class="text-sm text-stone-500 mb-3">Cargá un .json exportado desde la carátula de una obra (por vos o por un colega). Se agrega como obra nueva sin tocar las demás. Si trae rúbros que no tenés, se suman al catálogo.</p><input type="file" accept=".json" class="hidden"><button class="inline-flex items-center gap-1.5 font-medium rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-sm px-3.5 py-2 bg-white text-stone-700 border border-stone-300 hover:bg-stone-50"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"></path></svg>Elegir archivo de obra</button></div><div class="bg-white border border-stone-300 rounded p-4"><div class="font-medium text-stone-800 mb-1">Restaurar catálogo del Excel</div><p class="text-sm text-stone-500 mb-3">Vuelve el catálogo (materiales, APUs, rubros, equipos) al estado original extraído del master de Excel. No toca las obras.</p><button class="inline-flex items-center gap-1.5 font-medium rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-sm px-3.5 py-2 bg-white text-red-700 border border-red-300 hover:bg-red-50"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>Restaurar catálogo</button></div><div class="bg-white border border-stone-300 rounded p-4"><div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;"><span class="font-medium text-stone-800">Restaurar desde Drive</span><span style="font-size: 10px; background-color: rgb(253, 224, 71); color: rgb(113, 63, 18); padding: 1px 6px; border-radius: 999px; font-weight: 600;">NUEVO</span></div><p class="text-sm text-stone-500 mb-3">Backups automáticos guardados en tu carpeta 'SUD Cómputo' de Drive. Conectá tu cuenta en el botón del encabezado.</p><div style="padding: 12px 0px; color: rgb(120, 113, 108); font-size: 13px;">Conectá tu cuenta de Google Drive para ver tus backups en la nube.</div></div></div></div></main><footer class="noprint" style="background: linear-gradient(rgb(250, 250, 249) 0%, rgb(245, 245, 244) 100%); border-top: 1px solid rgb(214, 211, 209); margin-top: 40px;"><div class="max-w-7xl mx-auto px-5 py-6" style="display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; flex-wrap: wrap;"><div style="font-size: 12px; color: rgb(87, 83, 78); line-height: 1.7;"><div style="font-family: ui-sans-serif, system-ui, sans-serif; font-size: 20px; font-weight: 300; color: rgb(28, 25, 23); letter-spacing: 0.01em; margin-bottom: 8px;">SUD_estudio</div><div>11.7368.4530 · serviciosarquitectura.sud@gmail.com · @sud_estudio</div></div><div style="font-size: 11px; color: rgb(168, 162, 158); text-align: right; max-width: 420px; line-height: 1.5;">Cómputo y presupuesto · catálogos, biblioteca de APUs, planificación, suministro y control de obra. Los datos se guardan en este navegador — exportá un respaldo desde la pestaña Respaldo.</div></div></footer></div></div>
 <script>/**
  * @license React
  * react.production.min.js
@@ -2263,6 +2265,28 @@ function EditMoney({
     className: 'w-full bg-amber-50 px-1.5 py-1 rounded border border-amber-600 outline-none text-right font-mono tabular-nums'
   });
 }
+// Desplegable cerrado para asignar una opción de una lista canónica.
+// Si el valor actual no está en la lista (huérfano), lo muestra igual marcado "(sin clasificar)"
+// para no perder el dato hasta que el usuario lo reasigne.
+function EditSelect({
+  value,
+  options,
+  onCommit,
+  emptyLabel = '— sin división —'
+}) {
+  const opts = Array.isArray(options) ? options : [];
+  const v = value || '';
+  const esHuerfano = v !== '' && !opts.includes(v);
+  return /*#__PURE__*/React.createElement("select", {
+    value: v,
+    onChange: e => { const nv = e.target.value; if (nv !== value) onCommit(nv); },
+    className: 'w-full bg-transparent px-1.5 py-1 rounded border outline-none focus:border-amber-600 focus:bg-amber-50 text-sm ' + (esHuerfano ? 'border-amber-400 bg-amber-50 text-amber-800' : 'border-transparent hover:border-stone-300')
+  },
+    /*#__PURE__*/React.createElement("option", { value: '' }, emptyLabel),
+    esHuerfano && /*#__PURE__*/React.createElement("option", { value: v }, v + ' (sin clasificar)'),
+    opts.map(o => /*#__PURE__*/React.createElement("option", { key: o, value: o }, o))
+  );
+}
 const Modal = ({
   title,
   onClose,
@@ -2325,7 +2349,64 @@ function Materiales({
 }) {
   const [q, setQ] = useState('');
   const [div, setDiv] = useState('');
-  const divisiones = useMemo(() => [...new Set(cat.materiales.map(m => m.div).filter(Boolean))].sort(), [cat.materiales]);
+  const [subMat, setSubMat] = useState('materiales');
+  // Lista canónica de divisiones (Hito 0). Fallback a las usadas si aún no migró.
+  const divisionesCanon = useMemo(() =>
+    Array.isArray(cat.divisiones) && cat.divisiones.length
+      ? [...cat.divisiones].sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }))
+      : [...new Set(cat.materiales.map(m => m.div).filter(Boolean))].sort(),
+    [cat.divisiones, cat.materiales]);
+  // Divisiones "huérfanas": usadas por algún material pero ausentes de la lista canónica.
+  const huerfanas = useMemo(() => {
+    const canonSet = new Set(divisionesCanon);
+    return [...new Set(cat.materiales.map(m => (m.div || '').trim()).filter(Boolean))]
+      .filter(d => !canonSet.has(d)).sort();
+  }, [cat.materiales, divisionesCanon]);
+  // Conteo de materiales por división (para la subtab de administración).
+  const conteoPorDiv = useMemo(() => {
+    const c = {};
+    cat.materiales.forEach(m => { const d = (m.div || '').trim(); if (d) c[d] = (c[d] || 0) + 1; });
+    return c;
+  }, [cat.materiales]);
+  // Alta de división canónica.
+  const addDivision = () => {
+    const nombre = (prompt('Nombre de la nueva división:') || '').trim();
+    if (!nombre) return;
+    if (divisionesCanon.some(d => d.toLowerCase() === nombre.toLowerCase())) {
+      alert('Ya existe una división con ese nombre.');
+      return;
+    }
+    setCat(c => ({ ...c, divisiones: [...(c.divisiones || []), nombre] }));
+  };
+  // Renombrar división canónica: propaga a todos los materiales que la usaban.
+  const renameDivision = (viejo) => {
+    const nuevo = (prompt('Nuevo nombre para la división "' + viejo + '":', viejo) || '').trim();
+    if (!nuevo || nuevo === viejo) return;
+    if (divisionesCanon.some(d => d.toLowerCase() === nuevo.toLowerCase() && d !== viejo)) {
+      alert('Ya existe una división con ese nombre.');
+      return;
+    }
+    setCat(c => ({
+      ...c,
+      divisiones: (c.divisiones || []).map(d => d === viejo ? nuevo : d),
+      materiales: c.materiales.map(m => (m.div || '').trim() === viejo ? { ...m, div: nuevo } : m)
+    }));
+  };
+  // Eliminar división canónica: solo si no hay materiales usándola.
+  const delDivision = (nombre) => {
+    const enUso = conteoPorDiv[nombre] || 0;
+    if (enUso > 0) {
+      alert('No se puede eliminar "' + nombre + '": hay ' + enUso + ' material(es) usándola. Reasignalos primero.');
+      return;
+    }
+    if (!confirm('¿Eliminar la división "' + nombre + '"?')) return;
+    setCat(c => ({ ...c, divisiones: (c.divisiones || []).filter(d => d !== nombre) }));
+  };
+  // Adoptar una división huérfana hacia la lista canónica (sin renombrar materiales).
+  const adoptarHuerfana = (nombre) => {
+    setCat(c => ({ ...c, divisiones: [...(c.divisiones || []), nombre] }));
+  };
+  const divisiones = divisionesCanon;
   const list = useMemo(() => cat.materiales.filter(m => (!div || m.div === div) && (!q || (m.cod + ' ' + m.desc).toLowerCase().includes(q.toLowerCase()))).sort((a, b) => cmpCodigo(a.cod, b.cod)), [cat.materiales, q, div]);
   const upd = (cod, patch) => setCat(c => ({
     ...c,
@@ -2365,7 +2446,53 @@ function Materiales({
   };
   return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(SectionTitle, {
     sub: `${cat.materiales.length} materiales · catálogo central. El precio es por unidad física, puesto en obra.`
-  }, "Materiales"), /*#__PURE__*/React.createElement("div", {
+  }, "Materiales"),
+  /*#__PURE__*/React.createElement("div", { className: "flex gap-1 border-b border-stone-200 mb-4" },
+    [['materiales', 'Materiales'], ['divisiones', 'Divisiones']].map(([k, lbl]) =>
+      /*#__PURE__*/React.createElement("button", {
+        key: k,
+        onClick: () => setSubMat(k),
+        className: "px-3 py-2 text-sm border-b-2 -mb-px " + (subMat === k ? 'border-amber-600 text-amber-700 font-medium' : 'border-transparent text-stone-500 hover:text-stone-700')
+      }, lbl + (k === 'divisiones' && huerfanas.length ? ' (' + huerfanas.length + ' sin clasificar)' : '')))
+  ),
+  subMat === 'divisiones' && /*#__PURE__*/React.createElement("div", null,
+    /*#__PURE__*/React.createElement("div", { className: "flex items-center justify-between mb-3" },
+      /*#__PURE__*/React.createElement("p", { className: "text-xs text-stone-500 max-w-2xl" }, "Defin\xED ac\xE1 las divisiones del cat\xE1logo. Luego, en la pesta\xF1a Materiales, asign\xE1 cada material a una divisi\xF3n desde el desplegable. Renombrar una divisi\xF3n actualiza autom\xE1ticamente todos los materiales que la usan."),
+      /*#__PURE__*/React.createElement(Btn, { onClick: addDivision, sm: true }, /*#__PURE__*/React.createElement(Plus, { size: 14 }), "Divisi\xF3n")
+    ),
+    huerfanas.length > 0 && /*#__PURE__*/React.createElement("div", { className: "bg-amber-50 border border-amber-300 rounded p-3 mb-3" },
+      /*#__PURE__*/React.createElement("div", { className: "text-xs font-medium text-amber-800 mb-2" }, "Divisiones sin clasificar (usadas por materiales pero no en la lista). Adoptalas o reasign\xE1 esos materiales."),
+      /*#__PURE__*/React.createElement("div", { className: "flex flex-wrap gap-2" },
+        huerfanas.map(h => /*#__PURE__*/React.createElement("div", { key: h, className: "flex items-center gap-1.5 bg-white border border-amber-300 rounded px-2 py-1 text-xs" },
+          /*#__PURE__*/React.createElement("span", { className: "text-amber-900" }, h),
+          /*#__PURE__*/React.createElement("span", { className: "text-stone-400" }, '(' + (conteoPorDiv[h] || 0) + ')'),
+          /*#__PURE__*/React.createElement("button", { onClick: () => adoptarHuerfana(h), className: "text-amber-700 hover:text-amber-900 underline" }, "adoptar")
+        ))
+      )
+    ),
+    /*#__PURE__*/React.createElement("div", { className: "bg-white border border-stone-300 rounded overflow-hidden" },
+      /*#__PURE__*/React.createElement("table", { className: "w-full text-sm" },
+        /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null,
+          /*#__PURE__*/React.createElement("th", { className: th }, "Divisi\xF3n"),
+          /*#__PURE__*/React.createElement("th", { className: th + ' w-32 text-right' }, "Materiales"),
+          /*#__PURE__*/React.createElement("th", { className: th + ' w-32 text-center' }, "Acciones")
+        )),
+        /*#__PURE__*/React.createElement("tbody", null,
+          divisionesCanon.length === 0
+            ? /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("td", { className: td + ' text-stone-400 italic', colSpan: 3 }, "No hay divisiones cargadas. Cre\xE1 la primera con el bot\xF3n \u201CDivisi\xF3n\u201D."))
+            : divisionesCanon.map(d => /*#__PURE__*/React.createElement("tr", { key: d, className: "hover:bg-stone-50" },
+                /*#__PURE__*/React.createElement("td", { className: td + ' font-medium text-stone-800' }, d),
+                /*#__PURE__*/React.createElement("td", { className: td + ' text-right font-mono text-stone-600' }, conteoPorDiv[d] || 0),
+                /*#__PURE__*/React.createElement("td", { className: td + ' text-center' },
+                  /*#__PURE__*/React.createElement("button", { onClick: () => renameDivision(d), className: "text-xs text-amber-700 hover:underline mr-3" }, "renombrar"),
+                  /*#__PURE__*/React.createElement("button", { onClick: () => delDivision(d), className: "text-xs text-stone-400 hover:text-red-600" }, "eliminar")
+                )
+              ))
+        )
+      )
+    )
+  ),
+  subMat === 'materiales' && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: "flex flex-wrap gap-2 mb-3 items-center"
   }, /*#__PURE__*/React.createElement("div", {
     className: "relative"
@@ -2383,10 +2510,10 @@ function Materiales({
     className: "text-sm border border-stone-300 rounded px-2 py-2 outline-none focus:border-amber-600"
   }, /*#__PURE__*/React.createElement("option", {
     value: ""
-  }, "Todas las divisiones"), divisiones.map(d => /*#__PURE__*/React.createElement("option", {
+  }, "Todas las divisiones"), [...divisionesCanon, ...huerfanas].map(d => /*#__PURE__*/React.createElement("option", {
     key: d,
     value: d
-  }, d))), /*#__PURE__*/React.createElement("span", {
+  }, d + (huerfanas.includes(d) ? ' (sin clasificar)' : '')))), /*#__PURE__*/React.createElement("span", {
     className: "text-xs text-stone-500"
   }, list.length, " en pantalla"), /*#__PURE__*/React.createElement("div", {
     className: "ml-auto"
@@ -2450,8 +2577,9 @@ function Materiales({
     })
   })), /*#__PURE__*/React.createElement("td", {
     className: td
-  }, /*#__PURE__*/React.createElement(EditCell, {
+  }, /*#__PURE__*/React.createElement(EditSelect, {
     value: m.div,
+    options: divisionesCanon,
     onCommit: v => upd(m.cod, {
       div: v
     })
@@ -2509,7 +2637,7 @@ function Materiales({
     className: "text-xs text-stone-400 mt-2"
   }, "Las celdas de precio en ", /*#__PURE__*/React.createElement("span", {
     className: "bg-amber-50 px-1"
-  }, "amarillo"), " est\xE1n sin cargar."));
+  }, "amarillo"), " est\xE1n sin cargar.")));
 }
 
 /* ============================ CATÁLOGO: MANO DE OBRA ============================ */
@@ -3687,6 +3815,8 @@ function ObraView({
   const [subHerr, setSubHerr] = useState('precios'); // 'precios' | 'analisis' — sub-tabs Solapa 5
   const [subExp, setSubExp] = useState('completa');  // 'completa' | 'comprar' — sub-tabs Explosión de insumos
   const [divsComprarSel, setDivsComprarSel] = useState(null); // null = todas; {rubroKey: bool} = selección de rubros a imprimir en "A comprar"
+  const [cmpImprSel, setCmpImprSel] = useState({}); // {division: bool} — rubros tildados para imprimir en Comparativa (Hito 2)
+  const [cmpSoloGanador, setCmpSoloGanador] = useState(false); // toggle impresión: true = solo proveedor ganador; false = todos
   // Helpers para modo "informe" (cuando se imprime el documento completo)
   const mostrar = (k) => informeSecciones ? informeSecciones.includes(k) : tab === k;
   const breakClass = informeSecciones ? "print-break-before" : "";
@@ -4477,177 +4607,222 @@ function ObraView({
   })()))));
   })(),
     explosion.length > 0 && subExp === 'comparativa' && (() => {
-    const IVA = 0.21;
-    const cot = obra.cotizaciones || {};
-    const nuevoProv = () => ({ nombre: '', precio: '', iva: 'sin' });
-    const nuevoEntry = () => ({ p: [nuevoProv(), nuevoProv(), nuevoProv()] });
-    const getPs = cod => (cot[cod] && cot[cod].p) || [nuevoProv(), nuevoProv(), nuevoProv()];
-    // Total a pagar al proveedor: precio cargado × cantidad a comprar, SIN modificar.
-    // El selector 'con/sin IVA' es informativo (etiqueta la base del precio cargado), no altera el cálculo.
-    // Recomendación: cargar todos los proveedores en la misma base (precio final de remito) para comparar parejo.
-    const totalConIVA = (e, prov) => {
-      const u = Number(prov && prov.precio) || 0;
-      if (u <= 0) return 0;
-      return u * (Number(e.totalComprar) || 0);
+    // ===== HITO 1 — Comparativa por CANAL DE COMPRA (= división canónica) =====
+    // Estructura: obra.cotizacionesPorRubro[div] = { provs:[{nombre,iva}×3], precios:{[cod]:[p0,p1,p2]} }
+    // Ganador = proveedor con menor TOTAL del canal completo (compro todo junto en un proveedor).
+    const cpr = obra.cotizacionesPorRubro || {};
+    const nuevoProvs = () => [{ nombre: '', iva: 'sin' }, { nombre: '', iva: 'sin' }, { nombre: '', iva: 'sin' }];
+    const getCanal = d => cpr[d] || { provs: nuevoProvs(), precios: {} };
+    const getProvs = d => (getCanal(d).provs && getCanal(d).provs.length === 3) ? getCanal(d).provs : nuevoProvs();
+    const getPrecio = (d, cod, i) => { const c = getCanal(d); return (c.precios && c.precios[cod] && c.precios[cod][i]) || ''; };
+    // Agrupar la explosión por división (canal).
+    const grupos = {};
+    explosion.forEach(e => { const d = (e.div || 'Sin divisi\xF3n').trim() || 'Sin divisi\xF3n'; if (!grupos[d]) grupos[d] = []; grupos[d].push(e); });
+    const divs = Object.keys(grupos).sort((a, b) => {
+      const ca = (grupos[a][0] && grupos[a][0].cod) || ''; const cb = (grupos[b][0] && grupos[b][0].cod) || '';
+      return cmpCodigo(ca, cb);
+    });
+    // Total de un material para un proveedor: precio unitario × cantidad a comprar.
+    const totalItem = (e, precio) => { const u = Number(precio) || 0; return u > 0 ? u * (Number(e.totalComprar) || 0) : 0; };
+    // Setear precio de un material en un proveedor de un canal.
+    const setPrecio = (d, cod, i, val) => {
+      const prev = obra.cotizacionesPorRubro || {};
+      const canal = prev[d] || { provs: nuevoProvs(), precios: {} };
+      const precios = { ...(canal.precios || {}) };
+      const fila = (precios[cod] || ['', '', '']).slice();
+      fila[i] = val;
+      precios[cod] = fila;
+      setObra({ ...obra, cotizacionesPorRubro: { ...prev, [d]: { provs: canal.provs || nuevoProvs(), precios } } });
     };
-    const setCampo = (cod, idx, campo, val) => {
-      const prev = obra.cotizaciones || {};
-      const entry = prev[cod] || nuevoEntry();
-      const ps = entry.p.map((x, i) => i === idx ? { ...x, [campo]: val } : x);
-      setObra({ ...obra, cotizaciones: { ...prev, [cod]: { ...entry, p: ps } } });
+    // Setear nombre / IVA de un proveedor (columna) de un canal.
+    const setProvCampo = (d, i, campo, val) => {
+      const prev = obra.cotizacionesPorRubro || {};
+      const canal = prev[d] || { provs: nuevoProvs(), precios: {} };
+      const provs = (canal.provs || nuevoProvs()).map((p, j) => j === i ? { ...p, [campo]: val } : p);
+      setObra({ ...obra, cotizacionesPorRubro: { ...prev, [d]: { provs, precios: canal.precios || {} } } });
     };
-    // botón "usar este precio": copia el unitario del proveedor a la Lista de materiales
-    const usarPrecio = (cod, prov) => {
-      const u = Number(prov && prov.precio) || 0;
+    // Total de cada proveedor para el canal completo (suma de todos los materiales que cotizó).
+    const totalesProvCanal = d => [0, 1, 2].map(i => grupos[d].reduce((acc, e) => acc + totalItem(e, getPrecio(d, e.cod, i)), 0));
+    // Ganador del canal: índice del proveedor con menor total (>0).
+    const ganadorCanal = d => {
+      const tots = totalesProvCanal(d);
+      const validos = tots.map((v, i) => ({ v, i })).filter(x => x.v > 0);
+      if (!validos.length) return -1;
+      return validos.reduce((min, x) => x.v < min.v ? x : min, validos[0]).i;
+    };
+    // "usar" unitario: copia un precio puntual a la Lista de materiales.
+    const usarPrecio = (d, cod, i) => {
+      const u = Number(getPrecio(d, cod, i)) || 0;
       if (u <= 0) return;
+      const iva = (getProvs(d)[i] || {}).iva || 'sin';
       const prec = obra.precios || {};
       const mat = { ...(prec.materiales || {}) };
       const matIVA = { ...(prec.materialesConIVA || {}) };
-      if (prov.iva === 'con') { matIVA[cod] = u; delete mat[cod]; }
+      if (iva === 'con') { matIVA[cod] = u; delete mat[cod]; }
       else { mat[cod] = u; delete matIVA[cod]; }
       setObra({ ...obra, precios: { ...prec, materiales: mat, materialesConIVA: matIVA } });
     };
-    const provNombres = [0, 1, 2].map(i => {
-      let n = '';
-      for (const k in cot) { const v = cot[k] && cot[k].p && cot[k].p[i] && cot[k].p[i].nombre; if (v) { n = v; break; } }
-      return n;
-    });
-    const provIvas = [0, 1, 2].map(i => {
-      for (const k in cot) { const v = cot[k] && cot[k].p && cot[k].p[i] && cot[k].p[i].iva; if (v) return v; }
-      return 'sin';
-    });
-    const totalGanador = explosion.reduce((acc, e) => {
-      const ps = getPs(e.cod);
-      const tots = [0, 1, 2].map(i => totalConIVA(e, ps[i])).filter(v => v > 0);
-      return acc + (tots.length ? Math.min(...tots) : 0);
-    }, 0);
-    const setIvaColumna = (i, val) => {
-      const prev = obra.cotizaciones || {};
-      const next = { ...prev };
-      explosion.forEach(e => {
-        const entry = next[e.cod] || nuevoEntry();
-        const ps = entry.p.map((x, j) => j === i ? { ...x, iva: val } : x);
-        next[e.cod] = { ...entry, p: ps };
+    // "Adjudicar rubro": copia los unitarios del proveedor GANADOR a la Lista de materiales,
+    // para TODOS los materiales del canal que ese proveedor cotizó. Registra el proveedor adjudicado.
+    const adjudicarRubro = d => {
+      const gi = ganadorCanal(d);
+      if (gi < 0) { alert('No hay precios cargados en este rubro todav\xEDa.'); return; }
+      const prov = getProvs(d)[gi] || {};
+      const nombreProv = prov.nombre || ('Prov. ' + (gi + 1));
+      const iva = prov.iva || 'sin';
+      const cuantos = grupos[d].filter(e => (Number(getPrecio(d, e.cod, gi)) || 0) > 0).length;
+      if (!confirm('Adjudicar "' + d + '" a ' + nombreProv + ': se copiar\xE1n ' + cuantos + ' precio(s) a la Lista de materiales. \xBFConfirmar?')) return;
+      const prec = obra.precios || {};
+      const mat = { ...(prec.materiales || {}) };
+      const matIVA = { ...(prec.materialesConIVA || {}) };
+      const provReg = { ...((prec.proveedores || obra.proveedores || {}).materiales || {}) };
+      grupos[d].forEach(e => {
+        const u = Number(getPrecio(d, e.cod, gi)) || 0;
+        if (u <= 0) return;
+        if (iva === 'con') { matIVA[e.cod] = u; delete mat[e.cod]; }
+        else { mat[e.cod] = u; delete matIVA[e.cod]; }
+        provReg[e.cod] = nombreProv;
       });
-      setObra({ ...obra, cotizaciones: next });
+      setObra({ ...obra, precios: { ...prec, materiales: mat, materialesConIVA: matIVA }, proveedores: { ...(obra.proveedores || {}), materiales: provReg } });
     };
-    const setNombreColumna = (i, val) => {
-      const prev = obra.cotizaciones || {};
-      const next = { ...prev };
-      explosion.forEach(e => {
-        const entry = next[e.cod] || nuevoEntry();
-        const ps = entry.p.map((x, j) => j === i ? { ...x, nombre: val } : x);
-        next[e.cod] = { ...entry, p: ps };
-      });
-      setObra({ ...obra, cotizaciones: next });
-    };
-    return /*#__PURE__*/React.createElement("div", null,
-      /*#__PURE__*/React.createElement("div", { className: "noprint flex items-center justify-between mb-2 gap-3" },
-        /*#__PURE__*/React.createElement("p", { className: "text-xs text-stone-500" }, "Carg\xE1 el precio UNITARIO (por unidad de medida) de cada proveedor. El total = precio \xD7 cantidad a comprar, tal cual lo carg\xE1s. El selector con/sin IVA solo etiqueta la base; carg\xE1 todos los proveedores en la misma base para comparar parejo. El bot\xF3n \u201Cusar\u201D copia ese unitario a la Lista de materiales."),
-        /*#__PURE__*/React.createElement("button", {
-          onClick: () => window.print(),
-          className: "flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium bg-amber-600 text-white hover:bg-amber-700 whitespace-nowrap shrink-0"
-        }, "Imprimir comparativa")
-      ),
-      /*#__PURE__*/React.createElement("div", { className: "bg-white border border-stone-300 rounded overflow-x-auto" },
-      /*#__PURE__*/React.createElement("table", { className: "w-full text-sm" },
-        /*#__PURE__*/React.createElement("thead", null,
-          /*#__PURE__*/React.createElement("tr", null,
-            /*#__PURE__*/React.createElement("th", { className: th + ' w-16' }, "\xCDtem"),
-            /*#__PURE__*/React.createElement("th", { className: th }, "Material"),
-            /*#__PURE__*/React.createElement("th", { className: th + ' w-12' }, "Un."),
-            /*#__PURE__*/React.createElement("th", { className: th + ' w-28' }, "A comprar"),
-            /*#__PURE__*/React.createElement("th", { className: th + ' w-40 text-center' }, "Prov. 1"),
-            /*#__PURE__*/React.createElement("th", { className: th + ' w-40 text-center' }, "Prov. 2"),
-            /*#__PURE__*/React.createElement("th", { className: th + ' w-40 text-center' }, "Prov. 3"),
-            /*#__PURE__*/React.createElement("th", { className: th + ' w-32 text-center' }, "M\xE1s barato")
+    // Total general comprando, en cada canal, todo al proveedor ganador del canal.
+    const totalGeneral = divs.reduce((acc, d) => { const gi = ganadorCanal(d); return acc + (gi >= 0 ? totalesProvCanal(d)[gi] : 0); }, 0);
+    // Hito 2 — impresión selectiva. Si no hay ningún rubro tildado, se imprimen todos.
+    const algunoTildado = divs.some(d => cmpImprSel[d]);
+    const entraImpresion = d => !algunoTildado || !!cmpImprSel[d];
+    const toggleRubro = d => setCmpImprSel(s => ({ ...s, [d]: !s[d] }));
+    const tildarTodos = () => { const n = {}; divs.forEach(d => n[d] = true); setCmpImprSel(n); };
+    const tildarNinguno = () => setCmpImprSel({});
+    return /*#__PURE__*/React.createElement("div", { className: cmpSoloGanador ? 'cmp-solo-ganador' : '' },
+      /*#__PURE__*/React.createElement("div", { className: "noprint mb-3" },
+        /*#__PURE__*/React.createElement("p", { className: "text-xs text-stone-500" }, "Cada rubro tiene sus propios 3 proveedores (se compra en distintos lugares: corral\xF3n, sanitarios, aberturas\u2026). Carg\xE1 el precio UNITARIO por proveedor. El ganador es el proveedor con menor total del rubro COMPLETO. \u201CAdjudicar rubro\u201D copia los precios del ganador a la Lista de materiales; \u201Cusar\u201D copia un precio puntual."),
+        /*#__PURE__*/React.createElement("div", { className: "bg-stone-50 border border-stone-200 rounded p-3 mt-3" },
+          /*#__PURE__*/React.createElement("div", { className: "flex items-center justify-between gap-3 mb-2 flex-wrap" },
+            /*#__PURE__*/React.createElement("span", { className: "text-xs font-medium text-stone-700" }, "Imprimir comparativa \u2014 eleg\xED qu\xE9 rubros mostrarle al cliente"),
+            /*#__PURE__*/React.createElement("div", { className: "flex items-center gap-2 flex-wrap" },
+              /*#__PURE__*/React.createElement("label", { className: "flex items-center gap-1.5 text-xs text-stone-600 cursor-pointer select-none" },
+                /*#__PURE__*/React.createElement("input", { type: "checkbox", checked: cmpSoloGanador, onChange: () => setCmpSoloGanador(v => !v) }),
+                "Solo proveedor ganador"
+              ),
+              /*#__PURE__*/React.createElement("button", { onClick: tildarTodos, className: "text-xs text-amber-700 hover:underline" }, "Todos"),
+              /*#__PURE__*/React.createElement("button", { onClick: tildarNinguno, className: "text-xs text-stone-500 hover:underline" }, "Ninguno"),
+              /*#__PURE__*/React.createElement("button", {
+                onClick: () => window.print(),
+                className: "flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium bg-amber-600 text-white hover:bg-amber-700 whitespace-nowrap"
+              }, "Imprimir selecci\xF3n")
+            )
           ),
-          /*#__PURE__*/React.createElement("tr", { className: "noprint bg-stone-50" },
-            /*#__PURE__*/React.createElement("th", { className: "p-1", colSpan: 4 }),
-            ...[0, 1, 2].map(i => /*#__PURE__*/React.createElement("th", { key: 'pn-' + i, className: "p-1" },
-              /*#__PURE__*/React.createElement("input", {
-                type: "text", placeholder: "Nombre proveedor " + (i + 1), value: provNombres[i],
-                onChange: ev => setNombreColumna(i, ev.target.value),
-                className: "w-full border border-stone-300 rounded px-2 py-1 text-xs mb-1"
-              }),
-              /*#__PURE__*/React.createElement("select", {
-                value: provIvas[i],
-                onChange: ev => setIvaColumna(i, ev.target.value),
-                className: "w-full border border-stone-300 rounded px-1 py-1 text-xs text-stone-600"
-              },
-                /*#__PURE__*/React.createElement("option", { value: 'sin' }, "Precio sin IVA"),
-                /*#__PURE__*/React.createElement("option", { value: 'con' }, "Precio con IVA")
-              )
-            )),
-            /*#__PURE__*/React.createElement("th", { className: "p-1" })
-          )
-        ),
-        /*#__PURE__*/React.createElement("tbody", null, (() => {
-          const grupos = {};
-          explosion.forEach(e => {
-            const d = (e.div || 'Sin divisi\xF3n').trim() || 'Sin divisi\xF3n';
-            if (!grupos[d]) grupos[d] = [];
-            grupos[d].push(e);
-          });
-          const divs = Object.keys(grupos).sort((a, b) => {
-            const ca = (grupos[a][0] && grupos[a][0].cod) || '';
-            const cb = (grupos[b][0] && grupos[b][0].cod) || '';
-            return cmpCodigo(ca, cb);
-          });
-          const fila = e => {
-            const ps = getPs(e.cod);
-            const totales = [0, 1, 2].map(i => totalConIVA(e, ps[i]));
-            const validos = totales.filter(v => v > 0);
-            const minVal = validos.length ? Math.min(...validos) : null;
-            const idxGanador = minVal !== null ? totales.findIndex(v => v === minVal && v > 0) : -1;
-            const aComprar = e.pres1 && e.comp1 !== '' ? (fmtN(e.comp1) + ' ' + e.pres1 + (e.pres2 && e.comp2 ? ' + ' + fmtN(e.comp2) + ' ' + e.pres2 : '')) : (fmtN(e.conDesp) + ' ' + e.unidad);
-            return /*#__PURE__*/React.createElement("tr", { key: 'cmp-' + e.cod, className: "hover:bg-stone-50" },
-              /*#__PURE__*/React.createElement("td", { className: td + ' font-mono text-xs text-stone-500' }, e.cod),
-              /*#__PURE__*/React.createElement("td", { className: td }, e.desc),
-              /*#__PURE__*/React.createElement("td", { className: td + ' text-stone-500' }, e.unidad),
-              /*#__PURE__*/React.createElement("td", { className: td + ' text-right font-mono text-stone-700 text-xs' }, aComprar),
-              ...[0, 1, 2].map(i => {
-                const u = Number(ps[i] && ps[i].precio) || 0;
-                const esGan = i === idxGanador;
-                return /*#__PURE__*/React.createElement("td", { key: 'pr-' + i, className: td + (esGan ? ' bg-green-50' : '') },
-                  /*#__PURE__*/React.createElement("div", { className: "noprint" },
-                    /*#__PURE__*/React.createElement(EditMoney, {
-                      value: (ps[i] && ps[i].precio) || '',
-                      placeholder: "$/" + (e.unidad || 'un'),
-                      onCommit: v => setCampo(e.cod, i, 'precio', v)
-                    })
-                  ),
-                  /*#__PURE__*/React.createElement("div", { className: "noprint flex items-center justify-end gap-1 mt-0.5" },
-                    /*#__PURE__*/React.createElement("span", { className: "text-[10px] text-stone-400 font-mono" }, totales[i] > 0 ? ('Tot ' + money(totales[i])) : ''),
-                    u > 0 && /*#__PURE__*/React.createElement("button", {
-                      onClick: () => usarPrecio(e.cod, ps[i]),
-                      title: "Copiar este unitario a la Lista de materiales",
-                      className: "text-[10px] px-1.5 py-0.5 rounded border border-amber-500 text-amber-700 hover:bg-amber-50"
-                    }, "usar")
-                  ),
-                  /*#__PURE__*/React.createElement("span", { className: "onlyprint text-right block font-mono" + (esGan ? ' font-semibold' : '') }, u > 0 ? (money(u) + (ps[i].iva === 'con' ? ' c/IVA' : ' s/IVA')) : '\u2014')
-                );
-              }),
-              /*#__PURE__*/React.createElement("td", { className: td + ' text-center' }, idxGanador >= 0
-                ? /*#__PURE__*/React.createElement("span", { className: "inline-block px-2 py-0.5 rounded text-xs font-semibold bg-green-100 text-green-800" }, (provNombres[idxGanador] || ('Prov. ' + (idxGanador + 1))) + ' \xB7 ' + money(minVal))
-                : /*#__PURE__*/React.createElement("span", { className: "text-stone-300 text-xs" }, "\u2014"))
-            );
-          };
-          return divs.map(dNom => /*#__PURE__*/React.createElement(React.Fragment, { key: 'divcmp-' + dNom },
-            /*#__PURE__*/React.createElement("tr", { className: 'bg-amber-600 text-white' },
-              /*#__PURE__*/React.createElement("td", { className: td + ' font-semibold uppercase tracking-wide text-xs', colSpan: 8 }, dNom)
-            ),
-            grupos[dNom].map(fila)
-          ));
-        })()),
-        /*#__PURE__*/React.createElement("tfoot", null,
-          /*#__PURE__*/React.createElement("tr", { className: "bg-stone-100 font-semibold" },
-            /*#__PURE__*/React.createElement("td", { className: td, colSpan: 7 }, "Total comprando el m\xE1s barato de cada \xEDtem"),
-            /*#__PURE__*/React.createElement("td", { className: td + ' text-center text-green-800' }, money(totalGanador))
-          )
+          /*#__PURE__*/React.createElement("div", { className: "flex flex-wrap gap-x-4 gap-y-1.5" },
+            divs.map(d => /*#__PURE__*/React.createElement("label", { key: 'chk-' + d, className: "flex items-center gap-1.5 text-xs text-stone-600 cursor-pointer select-none" },
+              /*#__PURE__*/React.createElement("input", { type: "checkbox", checked: !!cmpImprSel[d], onChange: () => toggleRubro(d) }),
+              d
+            ))
+          ),
+          !algunoTildado && /*#__PURE__*/React.createElement("p", { className: "text-[11px] text-stone-400 mt-2" }, "Sin tildar nada se imprimen todos los rubros.")
         )
+      ),
+      divs.map(d => {
+        const provs = getProvs(d);
+        const tots = totalesProvCanal(d);
+        const gi = ganadorCanal(d);
+        return /*#__PURE__*/React.createElement("div", { key: 'canal-' + d, className: "mb-6 bg-white border border-stone-300 rounded overflow-hidden" + (entraImpresion(d) ? '' : ' cmp-noimpr') },
+          // Cabecera sticky del canal: nombre + proveedores + IVA + total por proveedor + adjudicar.
+          /*#__PURE__*/React.createElement("div", { className: "comp-sticky", style: { position: 'sticky', top: 0, zIndex: 5 } },
+            /*#__PURE__*/React.createElement("div", { className: "bg-amber-600 text-white px-3 py-2 flex items-center justify-between gap-3" },
+              /*#__PURE__*/React.createElement("span", { className: "font-semibold uppercase tracking-wide text-xs" }, d),
+              /*#__PURE__*/React.createElement("button", {
+                onClick: () => adjudicarRubro(d),
+                className: "noprint text-xs px-2.5 py-1 rounded bg-white text-amber-700 font-medium hover:bg-amber-50 whitespace-nowrap"
+              }, "Adjudicar rubro")
+            ),
+            /*#__PURE__*/React.createElement("div", { className: "noprint bg-stone-50 border-b border-stone-200 px-2 py-2 grid gap-2", style: { gridTemplateColumns: '1fr 1fr 1fr' } },
+              ...[0, 1, 2].map(i => /*#__PURE__*/React.createElement("div", { key: 'ph-' + d + '-' + i, className: (i === gi ? 'bg-green-50 border border-green-300 rounded p-1.5' : 'p-1.5') },
+                /*#__PURE__*/React.createElement("input", {
+                  type: "text", placeholder: "Proveedor " + (i + 1), value: provs[i].nombre || '',
+                  onChange: ev => setProvCampo(d, i, 'nombre', ev.target.value),
+                  className: "w-full border border-stone-300 rounded px-2 py-1 text-xs mb-1"
+                }),
+                /*#__PURE__*/React.createElement("select", {
+                  value: provs[i].iva || 'sin',
+                  onChange: ev => setProvCampo(d, i, 'iva', ev.target.value),
+                  className: "w-full border border-stone-300 rounded px-1 py-1 text-xs text-stone-600 mb-1"
+                },
+                  /*#__PURE__*/React.createElement("option", { value: 'sin' }, "Precio sin IVA"),
+                  /*#__PURE__*/React.createElement("option", { value: 'con' }, "Precio con IVA")
+                ),
+                /*#__PURE__*/React.createElement("div", { className: "text-[11px] font-mono text-right " + (i === gi ? 'text-green-800 font-semibold' : 'text-stone-500') },
+                  tots[i] > 0 ? ('Total ' + money(tots[i]) + (i === gi ? ' \u2713' : '')) : '\u2014')
+              ))
+            )
+          ),
+          /*#__PURE__*/React.createElement("table", { className: "w-full text-sm" },
+            (() => {
+              // Columnas a mostrar: si el toggle "solo ganador" está activo y hay ganador, solo esa columna.
+              const colsAMostrar = (cmpSoloGanador && gi >= 0) ? [gi] : [0, 1, 2];
+              return /*#__PURE__*/React.createElement(React.Fragment, null,
+            /*#__PURE__*/React.createElement("thead", null,
+              /*#__PURE__*/React.createElement("tr", { className: "bg-stone-100 text-stone-500 text-xs" },
+                /*#__PURE__*/React.createElement("th", { className: "text-left px-2 py-1 w-16" }, "\xCDtem"),
+                /*#__PURE__*/React.createElement("th", { className: "text-left px-2 py-1" }, "Material"),
+                /*#__PURE__*/React.createElement("th", { className: "text-right px-2 py-1 w-28" }, "A comprar"),
+                ...colsAMostrar.map(i => /*#__PURE__*/React.createElement("th", { key: 'h-' + i, className: "text-center px-2 py-1 w-36" + (i === gi ? ' text-green-800' : '') }, (provs[i].nombre || ('Prov. ' + (i + 1))) + (i === gi ? ' \u2713' : '')))
+              )
+            ),
+            /*#__PURE__*/React.createElement("tbody", null,
+              grupos[d].map(e => {
+                const aComprar = e.pres1 && e.comp1 !== '' ? (fmtN(e.comp1) + ' ' + e.pres1 + (e.pres2 && e.comp2 ? ' + ' + fmtN(e.comp2) + ' ' + e.pres2 : '')) : (fmtN(e.conDesp) + ' ' + e.unidad);
+                const totItem = [0, 1, 2].map(i => totalItem(e, getPrecio(d, e.cod, i)));
+                const validItem = totItem.filter(v => v > 0);
+                const minItem = validItem.length ? Math.min(...validItem) : null;
+                const giItem = minItem !== null ? totItem.findIndex(v => v === minItem && v > 0) : -1;
+                return /*#__PURE__*/React.createElement("tr", { key: 'cmp-' + e.cod, className: "hover:bg-stone-50 border-t border-stone-100" },
+                  /*#__PURE__*/React.createElement("td", { className: td + ' font-mono text-xs text-stone-500' }, e.cod),
+                  /*#__PURE__*/React.createElement("td", { className: td }, e.desc),
+                  /*#__PURE__*/React.createElement("td", { className: td + ' text-right font-mono text-stone-700 text-xs' }, aComprar),
+                  ...colsAMostrar.map(i => {
+                    const u = Number(getPrecio(d, e.cod, i)) || 0;
+                    const esGanItem = i === giItem;
+                    return /*#__PURE__*/React.createElement("td", { key: 'pr-' + i, className: td + (esGanItem ? ' bg-green-50' : '') },
+                      /*#__PURE__*/React.createElement("div", { className: "noprint" },
+                        /*#__PURE__*/React.createElement(EditMoney, {
+                          value: getPrecio(d, e.cod, i) || '',
+                          placeholder: "$/" + (e.unidad || 'un'),
+                          onCommit: v => setPrecio(d, e.cod, i, v)
+                        })
+                      ),
+                      /*#__PURE__*/React.createElement("div", { className: "noprint flex items-center justify-end gap-1 mt-0.5" },
+                        /*#__PURE__*/React.createElement("span", { className: "text-[10px] text-stone-400 font-mono" }, totItem[i] > 0 ? ('Tot ' + money(totItem[i])) : ''),
+                        u > 0 && /*#__PURE__*/React.createElement("button", {
+                          onClick: () => usarPrecio(d, e.cod, i),
+                          title: "Copiar este unitario a la Lista de materiales",
+                          className: "text-[10px] px-1.5 py-0.5 rounded border border-amber-500 text-amber-700 hover:bg-amber-50"
+                        }, "usar")
+                      ),
+                      /*#__PURE__*/React.createElement("span", { className: "onlyprint text-right block font-mono" + (esGanItem ? ' font-semibold' : '') }, u > 0 ? (money(u) + ((provs[i].iva === 'con') ? ' c/IVA' : ' s/IVA')) : '\u2014')
+                    );
+                  })
+                );
+              })
+            ),
+            /*#__PURE__*/React.createElement("tfoot", null,
+              /*#__PURE__*/React.createElement("tr", { className: "bg-stone-100 font-semibold text-xs" },
+                /*#__PURE__*/React.createElement("td", { className: td, colSpan: 3 }, "Total del rubro por proveedor"),
+                ...colsAMostrar.map(i => /*#__PURE__*/React.createElement("td", { key: 'ft-' + i, className: td + ' text-right font-mono ' + (i === gi ? 'text-green-800' : 'text-stone-600') }, tots[i] > 0 ? money(tots[i]) : '\u2014'))
+              ),
+              gi >= 0 && /*#__PURE__*/React.createElement("tr", { className: "bg-green-50" },
+                /*#__PURE__*/React.createElement("td", { className: td + ' text-green-800 text-xs', colSpan: 3 + colsAMostrar.length }, "Ganador del rubro: " + (provs[gi].nombre || ('Prov. ' + (gi + 1))) + " \xB7 " + money(tots[gi]))
+              )
+            )
+              );
+            })()
+          )
+        );
+      }),
+      /*#__PURE__*/React.createElement("div", { className: "bg-stone-800 text-white rounded px-4 py-3 flex items-center justify-between" },
+        /*#__PURE__*/React.createElement("span", { className: "text-sm" }, "Total general (cada rubro a su proveedor ganador)"),
+        /*#__PURE__*/React.createElement("span", { className: "font-mono font-semibold" }, money(totalGeneral))
       )
-    ));
+    );
   })(),
     explosion.length > 0 && (informeSecciones || subExp === 'completa') && /*#__PURE__*/React.createElement("div", {
     className: "bg-white border border-stone-300 rounded overflow-x-auto"
@@ -10393,7 +10568,8 @@ function App() {
             rubros: Array.isArray(parsed.rubros) ? parsed.rubros : seedFresh.rubros,
             biblioteca: Array.isArray(parsed.biblioteca) ? parsed.biblioteca : seedFresh.biblioteca,
             deletedApus: Array.isArray(parsed.deletedApus) ? parsed.deletedApus : [],
-            apusEditados: Array.isArray(parsed.apusEditados) ? parsed.apusEditados : []
+            apusEditados: Array.isArray(parsed.apusEditados) ? parsed.apusEditados : [],
+            divisiones: Array.isArray(parsed.divisiones) ? parsed.divisiones : undefined
           };
           // MERGE NO DESTRUCTIVO con el SEED: si el SEED tiene items nuevos
           // que no están en el catálogo guardado, agregarlos. NO se tocan
@@ -10446,6 +10622,13 @@ function App() {
       } else {
         catFinal = seedFresh;
       }
+      // Hito 0 — Migración silenciosa: lista canónica de divisiones (cat.divisiones).
+      // Si no existe, se siembra con las divisiones que ya están en uso en los materiales
+      // (deduplicadas y ordenadas). No toca ningún material; solo crea la lista maestra editable.
+      if (!Array.isArray(catFinal.divisiones)) {
+        const usadas = [...new Set((catFinal.materiales || []).map(m => (m.div || '').trim()).filter(Boolean))];
+        catFinal.divisiones = usadas.sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+      }
       setCat(catFinal);
       // Cargar obras con manejo de error: si el JSON está corrupto, arrancar vacío
       let obrasFinal = [];
@@ -10462,12 +10645,33 @@ function App() {
       // toda obra existente recibe obra.materialesConfig = {} si no lo tiene.
       // Hito 7 — además fuerza obra.coef.iva = 0 (IVA salió del coeficiente
       // y ahora vive dentro del precio del material en la Solapa 8 Lista de materiales).
+      // Hito 1 (comparativa por canal) — migra obra.cotizaciones (terna GLOBAL)
+      // a obra.cotizacionesPorRubro[division] = { provs:[{nombre,iva}×3], precios:{[cod]:[p0,p1,p2]} }.
+      // Cada cotización vieja se reubica en el canal = división del material.
+      // Los nombres/IVA globales previos se siembran como punto de partida de cada canal.
+      const divDe = {};
+      (catFinal.materiales || []).forEach(m => { divDe[m.cod] = (m.div || '').trim() || 'Sin división'; });
       obrasFinal = obrasFinal.map(o => {
         if (!o || typeof o !== 'object') return o;
         const next = { ...o };
         if (!next.materialesConfig) next.materialesConfig = {};
         if (next.coef && next.coef.iva !== 0) {
           next.coef = { ...next.coef, iva: 0 };
+        }
+        if (!next.cotizacionesPorRubro) {
+          const porRubro = {};
+          const cotViejas = next.cotizaciones || {};
+          // Nombres/IVA globales previos (primer valor no vacío por columna).
+          const nombreGlobal = [0, 1, 2].map(i => { for (const k in cotViejas) { const v = cotViejas[k] && cotViejas[k].p && cotViejas[k].p[i] && cotViejas[k].p[i].nombre; if (v) return v; } return ''; });
+          const ivaGlobal = [0, 1, 2].map(i => { for (const k in cotViejas) { const v = cotViejas[k] && cotViejas[k].p && cotViejas[k].p[i] && cotViejas[k].p[i].iva; if (v) return v; } return 'sin'; });
+          const ensureCanal = d => { if (!porRubro[d]) porRubro[d] = { provs: [0, 1, 2].map(i => ({ nombre: nombreGlobal[i] || '', iva: ivaGlobal[i] || 'sin' })), precios: {} }; return porRubro[d]; };
+          Object.keys(cotViejas).forEach(cod => {
+            const d = divDe[cod] || 'Sin división';
+            const canal = ensureCanal(d);
+            const ps = (cotViejas[cod] && cotViejas[cod].p) || [];
+            canal.precios[cod] = [0, 1, 2].map(i => (ps[i] && ps[i].precio) || '');
+          });
+          next.cotizacionesPorRubro = porRubro;
         }
         return next;
       });
