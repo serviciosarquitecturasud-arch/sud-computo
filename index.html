@@ -4622,8 +4622,19 @@ function ObraView({
       const ca = (grupos[a][0] && grupos[a][0].cod) || ''; const cb = (grupos[b][0] && grupos[b][0].cod) || '';
       return cmpCodigo(ca, cb);
     });
-    // Total de un material para un proveedor: precio unitario × cantidad a comprar.
-    const totalItem = (e, precio) => { const u = Number(precio) || 0; return u > 0 ? u * (Number(e.totalComprar) || 0) : 0; };
+    // Cantidad a comprar EN PRESENTACIÓN 1 (trazable: kg/m²/ml → varilla/panel).
+    // Si el material tiene fac1>0, se compra por presentación: conDesp / fac1 redondeado hacia arriba
+    // (incluye el sobrante de pres2 dentro de pres1, según criterio "solo precio de pres1").
+    // Si no tiene presentación (fac1=0), la "presentación" es la unidad física directa.
+    const cantPres1 = e => {
+      const f1 = Number(e.fac1) || 0;
+      if (f1 > 0) return Math.ceil((Number(e.conDesp) || 0) / f1);
+      return Number(e.conDesp) || 0;
+    };
+    // Unidad en que se carga el precio (para encabezado trazable: "$/varilla", "$/panel", "$/U").
+    const unidadPrecio = e => (Number(e.fac1) || 0) > 0 ? (e.pres1 || 'pres.') : (e.unidad || 'un');
+    // Total de un material para un proveedor: precio de la PRESENTACIÓN 1 × cantidad a comprar en pres 1.
+    const totalItem = (e, precio) => { const u = Number(precio) || 0; return u > 0 ? u * cantPres1(e) : 0; };
     // Setear precio de un material en un proveedor de un canal.
     const setPrecio = (d, cod, i, val) => {
       const prev = obra.cotizacionesPorRubro || {};
@@ -4786,7 +4797,7 @@ function ObraView({
                       /*#__PURE__*/React.createElement("div", { className: "noprint" },
                         /*#__PURE__*/React.createElement(EditMoney, {
                           value: getPrecio(d, e.cod, i) || '',
-                          placeholder: "$/" + (e.unidad || 'un'),
+                          placeholder: "$/" + unidadPrecio(e),
                           onCommit: v => setPrecio(d, e.cod, i, v)
                         })
                       ),
