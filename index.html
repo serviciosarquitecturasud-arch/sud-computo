@@ -4665,13 +4665,40 @@ function ObraView({
     const usarPrecio = (d, cod, i) => {
       const u = Number(getPrecio(d, cod, i)) || 0;
       if (u <= 0) return;
-      const iva = (getProvs(d)[i] || {}).iva || 'sin';
+      const prov = getProvs(d)[i] || {};
+      const iva = prov.iva || 'sin';
+      const nombreProv = prov.nombre || ('Prov. ' + (i + 1));
       const prec = obra.precios || {};
       const mat = { ...(prec.materiales || {}) };
       const matIVA = { ...(prec.materialesConIVA || {}) };
       if (iva === 'con') { matIVA[cod] = u; delete mat[cod]; }
       else { mat[cod] = u; delete matIVA[cod]; }
-      setObra({ ...obra, precios: { ...prec, materiales: mat, materialesConIVA: matIVA } });
+      const provReg = { ...((obra.proveedores || {}).materiales || {}) };
+      provReg[cod] = nombreProv;
+      setObra({ ...obra, precios: { ...prec, materiales: mat, materialesConIVA: matIVA }, proveedores: { ...(obra.proveedores || {}), materiales: provReg } });
+    };
+    // Quitar el precio aplicado de un material en la Lista de materiales (revierte el "en uso").
+    const quitarPrecio = (cod) => {
+      const prec = obra.precios || {};
+      const mat = { ...(prec.materiales || {}) };
+      const matIVA = { ...(prec.materialesConIVA || {}) };
+      delete mat[cod]; delete matIVA[cod];
+      const provReg = { ...((obra.proveedores || {}).materiales || {}) };
+      delete provReg[cod];
+      setObra({ ...obra, precios: { ...prec, materiales: mat, materialesConIVA: matIVA }, proveedores: { ...(obra.proveedores || {}), materiales: provReg } });
+    };
+    // Testigo "en uso": el precio cargado de este proveedor coincide con el que está en la Lista de materiales,
+    // respetando la base IVA (con → materialesConIVA, sin → materiales). Comparación con tolerancia mínima.
+    const precioEnUso = (d, cod, i) => {
+      const u = Number(getPrecio(d, cod, i)) || 0;
+      if (u <= 0) return false;
+      const iva = (getProvs(d)[i] || {}).iva || 'sin';
+      const prec = obra.precios || {};
+      const enLista = iva === 'con'
+        ? Number((prec.materialesConIVA || {})[cod])
+        : Number((prec.materiales || {})[cod]);
+      if (!enLista || isNaN(enLista)) return false;
+      return Math.abs(enLista - u) < 0.005;
     };
     // "Adjudicar rubro": copia los unitarios del proveedor GANADOR a la Lista de materiales,
     // para TODOS los materiales del canal que ese proveedor cotizó. Registra el proveedor adjudicado.
@@ -4736,6 +4763,12 @@ function ObraView({
         const provs = getProvs(d);
         const tots = totalesProvCanal(d);
         const gi = ganadorCanal(d);
+        // Estado de adjudicación: cuántos materiales del rubro (que el ganador cotizó) ya tienen
+        // el precio del ganador aplicado en la Lista de materiales.
+        const itemsGanador = gi >= 0 ? grupos[d].filter(e => (Number(getPrecio(d, e.cod, gi)) || 0) > 0) : [];
+        const itemsAplicados = gi >= 0 ? itemsGanador.filter(e => precioEnUso(d, e.cod, gi)).length : 0;
+        const totalmenteAdjudicado = itemsGanador.length > 0 && itemsAplicados === itemsGanador.length;
+        const parcialmenteAdjudicado = itemsAplicados > 0 && !totalmenteAdjudicado;
         return /*#__PURE__*/React.createElement("div", { key: 'canal-' + d, className: "mb-6 bg-white border border-stone-300 rounded overflow-hidden" + (entraImpresion(d) ? '' : ' cmp-noimpr') },
           // Cabecera sticky del canal: nombre + proveedores + IVA + total por proveedor + adjudicar.
           /*#__PURE__*/React.createElement("div", { className: "comp-sticky", style: { position: 'sticky', top: 0, zIndex: 5 } },
@@ -4743,8 +4776,11 @@ function ObraView({
               /*#__PURE__*/React.createElement("span", { className: "font-semibold uppercase tracking-wide text-xs" }, d),
               /*#__PURE__*/React.createElement("button", {
                 onClick: () => adjudicarRubro(d),
-                className: "noprint text-xs px-2.5 py-1 rounded bg-white text-amber-700 font-medium hover:bg-amber-50 whitespace-nowrap"
-              }, "Adjudicar rubro")
+                title: totalmenteAdjudicado ? "Rubro adjudicado al ganador. Cliqueá para re-aplicar." : "Aplicar los precios del ganador a la Lista de materiales",
+                className: "noprint text-xs px-2.5 py-1 rounded font-medium hover:opacity-90 whitespace-nowrap " + (totalmenteAdjudicado ? 'bg-green-600 text-white' : 'bg-white text-amber-700 hover:bg-amber-50')
+              }, totalmenteAdjudicado
+                  ? ('Adjudicado \u2713 ' + (provs[gi] && provs[gi].nombre || ''))
+                  : (parcialmenteAdjudicado ? ('Adjudicar resto (' + itemsAplicados + '/' + itemsGanador.length + ')') : 'Adjudicar rubro'))
             ),
             /*#__PURE__*/React.createElement("div", { className: "noprint bg-stone-50 border-b border-stone-200 px-2 py-2 grid gap-2", style: { gridTemplateColumns: '1fr 1fr 1fr' } },
               ...[0, 1, 2].map(i => /*#__PURE__*/React.createElement("div", { key: 'ph-' + d + '-' + i, className: (i === gi ? 'bg-green-50 border border-green-300 rounded p-1.5' : 'p-1.5') },
@@ -4803,11 +4839,23 @@ function ObraView({
                       ),
                       /*#__PURE__*/React.createElement("div", { className: "noprint flex items-center justify-end gap-1 mt-0.5" },
                         /*#__PURE__*/React.createElement("span", { className: "text-[10px] text-stone-400 font-mono" }, totItem[i] > 0 ? ('Tot ' + money(totItem[i])) : ''),
-                        u > 0 && /*#__PURE__*/React.createElement("button", {
-                          onClick: () => usarPrecio(d, e.cod, i),
-                          title: "Copiar este unitario a la Lista de materiales",
-                          className: "text-[10px] px-1.5 py-0.5 rounded border border-amber-500 text-amber-700 hover:bg-amber-50"
-                        }, "usar")
+                        u > 0 && (precioEnUso(d, e.cod, i)
+                          ? /*#__PURE__*/React.createElement("span", { className: "flex items-center gap-0.5" },
+                              /*#__PURE__*/React.createElement("span", {
+                                title: "Este precio está aplicado en la Lista de materiales",
+                                className: "text-[10px] px-1.5 py-0.5 rounded border border-green-600 bg-green-50 text-green-700 font-medium"
+                              }, "en uso \u2713"),
+                              /*#__PURE__*/React.createElement("button", {
+                                onClick: () => quitarPrecio(e.cod),
+                                title: "Quitar este precio de la Lista de materiales",
+                                className: "text-[11px] px-1 py-0.5 rounded border border-stone-300 text-stone-400 hover:text-red-600 hover:border-red-400"
+                              }, "\xD7")
+                            )
+                          : /*#__PURE__*/React.createElement("button", {
+                              onClick: () => usarPrecio(d, e.cod, i),
+                              title: "Aplicar este precio a la Lista de materiales",
+                              className: "text-[10px] px-1.5 py-0.5 rounded border border-amber-500 text-amber-700 hover:bg-amber-50"
+                            }, "usar"))
                       ),
                       /*#__PURE__*/React.createElement("span", { className: "onlyprint text-right block font-mono" + (esGanItem ? ' font-semibold' : '') }, u > 0 ? (money(u) + ((provs[i].iva === 'con') ? ' c/IVA' : ' s/IVA')) : '\u2014')
                     );
